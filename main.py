@@ -25,8 +25,43 @@
 import sys
 
 
-def main():
-    pass
+class Warehouse:
+    def __init__(self) -> None:
+        self.cookies = {"Cookie": 0, "Dark chocolate cookie": 0}
+
+    def list_commodities(self) -> None:
+        print()
+        for k, v in self.cookies.items():
+            print(f"{k} : {v}")
+
+
+def create_cookie(warehouse: Warehouse) -> None:
+    while True:
+        match input("Cookie? "):
+            case "cookie":
+                warehouse.cookies["Cookie"] += 1
+                print("+1 Cookie")
+            case "back" | "b":
+                break
+            case _:
+                print("Write 'cookie' or 'back'/'b'")
+
+
+def main() -> None:
+    warehouse = Warehouse()
+
+    while True:
+        print("\n~Menu~", "1. Warehouse", "2. Create cookie", "exit - Exit", sep="\n\t")
+
+        match input("Choice: "):
+            case "exit":
+                break
+            case "1":
+                warehouse.list_commodities()
+            case "2":
+                create_cookie(warehouse)
+            case _:
+                print("..?")
 
 
 if __name__ == "__main__":
