@@ -87,7 +87,7 @@ class Player:
 
 def create_cookie_menu(player: Player) -> None:
     while True:
-        match input("Cookie? "):
+        match input("\nCookie? "):
             case "cookie":
                 player.create_cookie()
                 print("+1 Cookie")
