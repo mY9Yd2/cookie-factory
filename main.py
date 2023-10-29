@@ -24,10 +24,12 @@
 
 import sys
 
+from typing import Dict
+
 
 class Warehouse:
     def __init__(self) -> None:
-        self.cookies = {"Cookie": 0, "Dark chocolate cookie": 0}
+        self.cookies: Dict[str, int] = {"Cookie": 0, "Dark chocolate cookie": 0}
 
     def list_commodities(self) -> None:
         for k, v in self.cookies.items():
@@ -35,22 +37,22 @@ class Warehouse:
 
 
 class Factory:
-    def __init__(self, name, price, production_volume) -> None:
-        self.quantity = 0
-        self.name = name
-        self.price = price
-        self.production_volume = production_volume
+    def __init__(self, name: str, price: int, production_volume: int) -> None:
+        self.quantity: int = 0
+        self.name: str = name
+        self.price: int = price
+        self.production_volume: int = production_volume
 
     def produceCookie(self, warehouse: Warehouse) -> None:
         warehouse.cookies["Cookie"] += self.quantity * self.production_volume
 
 
 class Player:
-    def __init__(self, warehouse, factories) -> None:
-        self.warehouse = warehouse
-        self.factories = factories
+    def __init__(self, warehouse: Warehouse, factories: Dict[str, Factory]) -> None:
+        self.warehouse: Warehouse = warehouse
+        self.factories: Dict[str, Factory] = factories
 
-    def buy_factory(self, name, quantity) -> None:
+    def buy_factory(self, name: str, quantity: int) -> None:
         if not name in self.factories:
             raise KeyError("There's no such factory!")
         if quantity < 1:
@@ -64,7 +66,7 @@ class Player:
         else:
             raise ValueError("You don't have enough Cookies!")
 
-    def sell_factory(self, name, quantity) -> None:
+    def sell_factory(self, name: str, quantity: int) -> None:
         if not name in self.factories:
             raise KeyError("There's no such factory!")
         if quantity < 1:
