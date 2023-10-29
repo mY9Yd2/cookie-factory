@@ -30,9 +30,8 @@ class Warehouse:
         self.cookies = {"Cookie": 0, "Dark chocolate cookie": 0}
 
     def list_commodities(self) -> None:
-        print()
         for k, v in self.cookies.items():
-            print(f"{k} : {v}")
+            print(f"\t{k} : {v}")
 
 
 class Factory:
@@ -147,6 +146,7 @@ def main() -> None:
             case "exit":
                 break
             case "1":
+                print("\n~Warehouse~")
                 player.warehouse.list_commodities()
             case "2":
                 player.create_cookie()
