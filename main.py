@@ -32,8 +32,8 @@ class Warehouse:
         self.cookies: Dict[str, int] = {"Cookie": 0, "Dark chocolate cookie": 0}
 
     def list_commodities(self) -> None:
-        for k, v in self.cookies.items():
-            print(f"\t{k} : {v}")
+        for cookie_name, quantity in self.cookies.items():
+            print(f"\t{cookie_name} : {quantity}")
 
 
 class Factory:
@@ -43,7 +43,7 @@ class Factory:
         self.price: int = price
         self.production_volume: int = production_volume
 
-    def produceCookie(self, warehouse: Warehouse) -> None:
+    def produce_cookie(self, warehouse: Warehouse) -> None:
         warehouse.cookies["Cookie"] += self.quantity * self.production_volume
 
 
@@ -123,13 +123,13 @@ def factory_menu(player: Player) -> None:
                         "\n'buy takodachi 1'",
                         "\n<buy/sell> <factory-name> <quantity>",
                     )
-        except ValueError as e:
-            if "invalid literal for int() with base 10" in str(e):
+        except ValueError as error:
+            if "invalid literal for int() with base 10" in str(error):
                 print("The quantity must be a whole number!")
             else:
-                print(e)
-        except KeyError as e:
-            print(e)
+                print(error)
+        except KeyError as error:
+            print(error)
 
 
 def main() -> None:
