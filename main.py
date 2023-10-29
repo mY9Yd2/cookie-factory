@@ -82,18 +82,27 @@ class Player:
             print(f"\t{factory.name}: {factory.quantity}")
 
     def create_cookie(self) -> None:
-        while True:
-            match input("Cookie? "):
-                case "cookie":
-                    self.warehouse.cookies["Cookie"] += 1
-                    print("+1 Cookie")
-                case "back" | "b":
-                    break
-                case _:
-                    print("Write 'cookie' or 'back'/'b'")
+        self.warehouse.cookies["Cookie"] += 1
 
 
-def factory_menu(player: Player):
+def create_cookie_menu(player: Player) -> None:
+    while True:
+        match input("Cookie? "):
+            case "cookie":
+                player.create_cookie()
+                print("+1 Cookie")
+            case "back" | "b":
+                break
+            case _:
+                print("Write 'cookie' or 'back'/'b'")
+
+
+def warehouse_menu(player: Player) -> None:
+    print("\n~Warehouse~")
+    player.warehouse.list_commodities()
+
+
+def factory_menu(player: Player) -> None:
     while True:
         print("\n~Factory~")
         player.list_factories()
@@ -146,10 +155,9 @@ def main() -> None:
             case "exit":
                 break
             case "1":
-                print("\n~Warehouse~")
-                player.warehouse.list_commodities()
+                warehouse_menu(player)
             case "2":
-                player.create_cookie()
+                create_cookie_menu(player)
             case "3":
                 factory_menu(player)
             case _:
