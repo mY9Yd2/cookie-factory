@@ -160,8 +160,8 @@ def main() -> None:
         {
             "Takodachi": Factory("Takodachi", 5, 1),
             "Robot": Factory("Robot", 25, 10),
-            "Farm": Factory("Farm", 500, 10),
-            "Mine": Factory("Mine", 5000, 125),
+            "Farm": Factory("Farm", 500, 100),
+            "Mine": Factory("Mine", 5000, 250),
         },
     )
 
