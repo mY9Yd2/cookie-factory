@@ -116,13 +116,16 @@ def factory_menu(player: Player) -> None:
         with timer_lock:
             player.list_factories()
 
+        is_acquired = False
         try:
             match input("Choice: ").split():
                 case ["buy", name, quantity]:
                     timer_lock.acquire()
+                    is_acquired = True
                     player.buy_factory(name.capitalize(), int(quantity))
                 case ["sell", name, quantity]:
                     timer_lock.acquire()
+                    is_acquired = True
                     player.sell_factory(name.capitalize(), int(quantity))
                 case ["back"] | ["b"]:
                     break
@@ -140,7 +143,7 @@ def factory_menu(player: Player) -> None:
         except KeyError as error:
             print(error)
         finally:
-            if timer_lock.locked():
+            if timer_lock.locked() and is_acquired:
                 timer_lock.release()
 
 
