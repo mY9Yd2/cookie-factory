@@ -23,6 +23,7 @@
 # SOFTWARE.
 
 import sys
+import threading
 
 from typing import Dict
 
@@ -87,11 +88,15 @@ class Player:
         self.warehouse.cookies["Cookie"] += 1
 
 
+timer_lock = threading.Lock()
+
+
 def create_cookie_menu(player: Player) -> None:
     while True:
         match input("\nCookie? "):
             case "cookie":
-                player.create_cookie()
+                with timer_lock:
+                    player.create_cookie()
                 print("+1 Cookie")
             case "back" | "b":
                 break
@@ -101,19 +106,23 @@ def create_cookie_menu(player: Player) -> None:
 
 def warehouse_menu(player: Player) -> None:
     print("\n~Warehouse~")
-    player.warehouse.list_commodities()
+    with timer_lock:
+        player.warehouse.list_commodities()
 
 
 def factory_menu(player: Player) -> None:
     while True:
         print("\n~Factory~")
-        player.list_factories()
+        with timer_lock:
+            player.list_factories()
 
         try:
             match input("Choice: ").split():
                 case ["buy", name, quantity]:
+                    timer_lock.acquire()
                     player.buy_factory(name.capitalize(), int(quantity))
                 case ["sell", name, quantity]:
+                    timer_lock.acquire()
                     player.sell_factory(name.capitalize(), int(quantity))
                 case ["back"] | ["b"]:
                     break
@@ -130,6 +139,19 @@ def factory_menu(player: Player) -> None:
                 print(error)
         except KeyError as error:
             print(error)
+        finally:
+            if timer_lock.locked():
+                timer_lock.release()
+
+
+def timer(player: Player) -> None:
+    with timer_lock:
+        for factory in player.factories.values():
+            factory.produce_cookie(player.warehouse)
+
+    timer_thread = threading.Timer(1, timer, [player])
+    timer_thread.daemon = True
+    timer_thread.start()
 
 
 def main() -> None:
@@ -142,6 +164,8 @@ def main() -> None:
             "Mine": Factory("Mine", 5000, 125),
         },
     )
+
+    timer(player)
 
     while True:
         print(
