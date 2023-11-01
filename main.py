@@ -38,14 +38,17 @@ class Warehouse:
 
 
 class Factory:
-    def __init__(self, name: str, price: int, production_volume: int) -> None:
+    def __init__(
+        self, name: str, price: int, production_volume: Dict[str, int]
+    ) -> None:
         self.quantity: int = 0
         self.name: str = name
         self.price: int = price
-        self.production_volume: int = production_volume
+        self.production_volume: Dict[str, int] = production_volume
 
     def produce_cookie(self, warehouse: Warehouse) -> None:
-        warehouse.cookies["Cookie"] += self.quantity * self.production_volume
+        for cookie_name, production_volume in self.production_volume.items():
+            warehouse.cookies[cookie_name] += self.quantity * production_volume
 
 
 class Player:
@@ -161,10 +164,10 @@ def main() -> None:
     player = Player(
         Warehouse(),
         {
-            "Takodachi": Factory("Takodachi", 5, 1),
-            "Robot": Factory("Robot", 25, 10),
-            "Farm": Factory("Farm", 500, 100),
-            "Mine": Factory("Mine", 5000, 250),
+            "Takodachi": Factory("Takodachi", 5, {"Cookie": 1}),
+            "Robot": Factory("Robot", 25, {"Cookie": 10}),
+            "Farm": Factory("Farm", 500, {"Cookie": 100}),
+            "Mine": Factory("Mine", 5000, {"Cookie": 250, "Dark chocolate cookie": 1}),
         },
     )
 
