@@ -25,12 +25,10 @@
 import sys
 import threading
 
-from typing import Dict
-
 
 class Warehouse:
     def __init__(self) -> None:
-        self.cookies: Dict[str, int] = {"Cookie": 0, "Dark chocolate cookie": 0}
+        self.cookies: dict[str, int] = {"Cookie": 0, "Dark chocolate cookie": 0}
 
     def list_commodities(self) -> None:
         for cookie_name, quantity in self.cookies.items():
@@ -39,12 +37,12 @@ class Warehouse:
 
 class Factory:
     def __init__(
-        self, name: str, price: int, production_volume: Dict[str, int]
+        self, name: str, price: int, production_volume: dict[str, int]
     ) -> None:
         self.quantity: int = 0
         self.name: str = name
         self.price: int = price
-        self.production_volume: Dict[str, int] = production_volume
+        self.production_volume: dict[str, int] = production_volume
 
     def produce_cookie(self, warehouse: Warehouse) -> None:
         for cookie_name, production_volume in self.production_volume.items():
@@ -52,9 +50,9 @@ class Factory:
 
 
 class Player:
-    def __init__(self, warehouse: Warehouse, factories: Dict[str, Factory]) -> None:
+    def __init__(self, warehouse: Warehouse, factories: dict[str, Factory]) -> None:
         self.warehouse: Warehouse = warehouse
-        self.factories: Dict[str, Factory] = factories
+        self.factories: dict[str, Factory] = factories
 
     def buy_factory(self, name: str, quantity: int) -> None:
         if not name in self.factories:
