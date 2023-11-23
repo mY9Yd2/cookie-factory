@@ -25,68 +25,9 @@
 import sys
 import threading
 
-
-class Warehouse:
-    def __init__(self) -> None:
-        self.cookies: dict[str, int] = {"Cookie": 0, "Dark chocolate cookie": 0}
-
-    def list_commodities(self) -> None:
-        for cookie_name, quantity in self.cookies.items():
-            print(f"\t{cookie_name} : {quantity}")
-
-
-class Factory:
-    def __init__(
-        self, name: str, price: int, production_volume: dict[str, int]
-    ) -> None:
-        self.quantity: int = 0
-        self.name: str = name
-        self.price: int = price
-        self.production_volume: dict[str, int] = production_volume
-
-    def produce_cookie(self, warehouse: Warehouse) -> None:
-        for cookie_name, production_volume in self.production_volume.items():
-            warehouse.cookies[cookie_name] += self.quantity * production_volume
-
-
-class Player:
-    def __init__(self, warehouse: Warehouse, factories: dict[str, Factory]) -> None:
-        self.warehouse: Warehouse = warehouse
-        self.factories: dict[str, Factory] = factories
-
-    def buy_factory(self, name: str, quantity: int) -> None:
-        if not name in self.factories:
-            raise KeyError("There's no such factory!")
-        if quantity < 1:
-            raise ValueError("The quantity must be a positive number!")
-
-        total_price = quantity * self.factories[name].price
-
-        if self.warehouse.cookies["Cookie"] >= total_price:
-            self.factories[name].quantity += quantity
-            self.warehouse.cookies["Cookie"] -= total_price
-        else:
-            raise ValueError("You don't have enough Cookies!")
-
-    def sell_factory(self, name: str, quantity: int) -> None:
-        if not name in self.factories:
-            raise KeyError("There's no such factory!")
-        if quantity < 1:
-            raise ValueError("The quantity must be a positive number!")
-
-        if self.factories[name].quantity >= quantity:
-            total_price = quantity * self.factories[name].price
-            self.warehouse.cookies["Cookie"] += total_price
-            self.factories[name].quantity -= quantity
-        else:
-            raise ValueError("You can't sell more than you have!")
-
-    def list_factories(self) -> None:
-        for factory in self.factories.values():
-            print(f"\t{factory.name}: {factory.quantity}")
-
-    def create_cookie(self) -> None:
-        self.warehouse.cookies["Cookie"] += 1
+from player import Player
+from cookie import Cookie
+from factory import FactoryConfig
 
 
 timer_lock = threading.Lock()
@@ -97,25 +38,32 @@ def create_cookie_menu(player: Player) -> None:
         match input("\nCookie? "):
             case "cookie":
                 with timer_lock:
-                    player.create_cookie()
-                print("+1 Cookie")
+                    player.add_cookie(Cookie.COOKIE, 1)
+                print(f"+1 {Cookie.COOKIE.value.capitalize()}")
             case "back" | "b":
                 break
             case _:
                 print("Write 'cookie' or 'back'/'b'")
 
 
-def warehouse_menu(player: Player) -> None:
-    print("\n~Warehouse~")
+def cookies_menu(player: Player) -> None:
+    print("\n~Cookies~")
     with timer_lock:
-        player.warehouse.list_commodities()
+        for cookie, quantity in player.cookies.items():
+            print(f"\t{cookie.value.capitalize()} : {quantity}")
 
 
 def factory_menu(player: Player) -> None:
     while True:
         print("\n~Factory~")
         with timer_lock:
-            player.list_factories()
+            for factory in FactoryConfig:
+                factory_name: str = factory.value.get("name")
+                player_factory = player.factories.get(factory.value.get("name"))
+                player_factory_quantity = (
+                    0 if player_factory is None else player_factory.quantity
+                )
+                print(f"\t{factory_name.capitalize()} : {player_factory_quantity}")
 
         is_acquired = False
         try:
@@ -123,11 +71,37 @@ def factory_menu(player: Player) -> None:
                 case ["buy", name, quantity]:
                     timer_lock.acquire()
                     is_acquired = True
-                    player.buy_factory(name.capitalize(), int(quantity))
+
+                    quantity = int(quantity)
+
+                    if quantity < 1:
+                        raise ValueError("The quantity must be a positive number!")
+                    if not FactoryConfig.is_exist(name):
+                        raise ValueError("There's no such factory!")
+
+                    total_price = FactoryConfig.get_price(name) * quantity
+
+                    if player.cookies.get(Cookie.COOKIE, 0) < total_price:
+                        raise ValueError("You don't have enough Cookies!")
+
+                    player.remove_cookie(Cookie.COOKIE, total_price)
+                    player.add_factory(name, quantity)
                 case ["sell", name, quantity]:
                     timer_lock.acquire()
                     is_acquired = True
-                    player.sell_factory(name.capitalize(), int(quantity))
+
+                    quantity = int(quantity)
+
+                    if quantity < 1:
+                        raise ValueError("The quantity must be a positive number!")
+                    if name not in player.factories:
+                        raise ValueError("There's no such factory!")
+                    if quantity > player.factories.get(name).quantity:
+                        raise ValueError("You can't sell more than you have!")
+
+                    total_price = FactoryConfig.get_price(name) * quantity
+                    player.add_cookie(Cookie.COOKIE, total_price)
+                    player.remove_factory(name, quantity)
                 case ["back"] | ["b"]:
                     break
                 case _:
@@ -141,8 +115,6 @@ def factory_menu(player: Player) -> None:
                 print("The quantity must be a whole number!")
             else:
                 print(error)
-        except KeyError as error:
-            print(error)
         finally:
             if timer_lock.locked() and is_acquired:
                 timer_lock.release()
@@ -151,7 +123,9 @@ def factory_menu(player: Player) -> None:
 def timer(player: Player) -> None:
     with timer_lock:
         for factory in player.factories.values():
-            factory.produce_cookie(player.warehouse)
+            cookies = factory.produce_cookies()
+            for cookie, quantity in cookies.items():
+                player.add_cookie(cookie, quantity)
 
     timer_thread = threading.Timer(1, timer, [player])
     timer_thread.daemon = True
@@ -159,22 +133,14 @@ def timer(player: Player) -> None:
 
 
 def main() -> None:
-    player = Player(
-        Warehouse(),
-        {
-            "Takodachi": Factory("Takodachi", 5, {"Cookie": 1}),
-            "Robot": Factory("Robot", 25, {"Cookie": 10}),
-            "Farm": Factory("Farm", 500, {"Cookie": 100}),
-            "Mine": Factory("Mine", 5000, {"Cookie": 250, "Dark chocolate cookie": 1}),
-        },
-    )
+    player = Player()
 
     timer(player)
 
     while True:
         print(
             "\n~Menu~",
-            "1. Warehouse",
+            "1. Cookies",
             "2. Create cookie",
             "3. Factory",
             "exit - Exit",
@@ -185,11 +151,14 @@ def main() -> None:
             case "exit":
                 break
             case "1":
-                warehouse_menu(player)
+                cookies_menu(player)
+                pass
             case "2":
                 create_cookie_menu(player)
+                pass
             case "3":
                 factory_menu(player)
+                pass
             case _:
                 print("..?")
 
