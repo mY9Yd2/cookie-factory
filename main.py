@@ -160,7 +160,6 @@ def timer(player: Player) -> None:
 def main() -> None:
     player = Player()
 
-    player.add_factory("mine", 1)
     timer(player)
 
     while True:
