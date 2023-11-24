@@ -24,6 +24,9 @@
 
 import sys
 import threading
+import random
+
+import effect
 
 from player import Player
 from cookie import Cookie
@@ -120,9 +123,31 @@ def factory_menu(player: Player) -> None:
                 timer_lock.release()
 
 
+def luck_menu(player: Player) -> None:
+    print("\n~I'm lucky~")
+    _effect = random.choices(
+        (None, effect.Inanis, effect.Darkness), weights=(100, 1, 1), k=1
+    )[0]
+
+    with timer_lock:
+        if _effect is None:
+            print("No, you are not lucky.")
+        elif _effect in player.effects:
+            print("You already have a lot of luck.")
+        else:
+            print("You're really lucky!")
+            if _effect == effect.Inanis:
+                print("Takodachis are working harder!")
+            elif _effect == effect.Darkness:
+                print("Dark chocolate cookies..")
+            player.effects.add(_effect)
+
+
 def timer(player: Player) -> None:
     with timer_lock:
         for factory in player.factories.values():
+            for _effect in player.effects:
+                factory = _effect(factory)
             cookies = factory.produce_cookies()
             for cookie, quantity in cookies.items():
                 player.add_cookie(cookie, quantity)
@@ -135,6 +160,7 @@ def timer(player: Player) -> None:
 def main() -> None:
     player = Player()
 
+    player.add_factory("mine", 1)
     timer(player)
 
     while True:
@@ -143,6 +169,7 @@ def main() -> None:
             "1. Cookies",
             "2. Create cookie",
             "3. Factory",
+            "4. I'm lucky",
             "exit - Exit",
             sep="\n\t",
         )
@@ -152,13 +179,12 @@ def main() -> None:
                 break
             case "1":
                 cookies_menu(player)
-                pass
             case "2":
                 create_cookie_menu(player)
-                pass
             case "3":
                 factory_menu(player)
-                pass
+            case "4":
+                luck_menu(player)
             case _:
                 print("..?")
 

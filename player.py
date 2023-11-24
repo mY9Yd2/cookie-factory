@@ -24,12 +24,14 @@
 
 from cookie import Cookie
 from factory import Factory, FactoryCreator
+from effect import Effect
 
 
 class Player:
     def __init__(self) -> None:
         self.cookies: dict[Cookie, int] = dict()
         self.factories: dict[str, Factory] = dict()
+        self.effects: set[Effect] = set()
 
     def add_cookie(self, cookie: Cookie, quantity: int) -> None:
         self.cookies.update({cookie: self.cookies.get(cookie, 0) + quantity})
