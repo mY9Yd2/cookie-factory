@@ -31,7 +31,6 @@ class Effect(Factory):
 
     def __init__(self, factory: Factory) -> None:
         self._factory = factory
-        self._name = factory.name
 
     @property
     def factory(self) -> Factory:
@@ -39,7 +38,7 @@ class Effect(Factory):
 
     @property
     def name(self) -> str:
-        return self._name
+        return self._factory.name
 
     def produce_cookies(self) -> dict[Cookie, int]:
         return self._factory.produce_cookies()
@@ -49,7 +48,7 @@ class Inanis(Effect):
     def produce_cookies(self) -> dict[Cookie, int]:
         cookies = self.factory.produce_cookies()
         multiplier = 1
-        if self.factory.name == FactoryConfig.TAKODACHI.value.get("name"):
+        if self.name == FactoryConfig.TAKODACHI.value.get("name"):
             multiplier = 2
         new_value = cookies.get(Cookie.COOKIE, 0) * multiplier
         cookies.update({Cookie.COOKIE: new_value})
