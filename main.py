@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # MIT License
 #
@@ -30,8 +30,9 @@ import effect
 
 from player import Player
 from cookie import Cookie
-from factory import FactoryConfig
 
+from factory import FactoryList
+from shop import FactoryShop
 
 timer_lock = threading.Lock()
 
@@ -56,71 +57,74 @@ def cookies_menu(player: Player) -> None:
             print(f"\t{cookie.value.capitalize()} : {quantity}")
 
 
-def factory_menu(player: Player) -> None:
+def factory_shop_menu(player: Player) -> None:
     while True:
-        print("\n~Factory~")
+        print("\n~Factory shop~")
+        shop = FactoryShop()
         with timer_lock:
-            for factory in FactoryConfig:
-                factory_name: str = factory.value.get("name")
-                player_factory = player.factories.get(factory.value.get("name"))
+            for item in shop.items:
+                player_factory = player.factories.get(item)
                 player_factory_quantity = (
                     0 if player_factory is None else player_factory.quantity
                 )
-                print(f"\t{factory_name.capitalize()} : {player_factory_quantity}")
+                print(f"\t{item} : {player_factory_quantity}")
 
-        is_acquired = False
-        try:
-            match input("Choice: ").split():
-                case ["buy", name, quantity]:
-                    timer_lock.acquire()
-                    is_acquired = True
+        match input("Choice: ").split():
+            case ["buy", name, quantity]:
+                with timer_lock:
+                    try:
+                        quantity = int(quantity)
+                        if quantity < 1:
+                            raise ValueError
+                    except ValueError:
+                        print("The quantity must be a whole positive number!")
+                        continue
 
-                    quantity = int(quantity)
+                    try:
+                        if FactoryList(name) not in shop.items:
+                            raise ValueError
+                    except ValueError:
+                        print("There's no such factory!")
+                        continue
 
-                    if quantity < 1:
-                        raise ValueError("The quantity must be a positive number!")
-                    if not FactoryConfig.is_exist(name):
-                        raise ValueError("There's no such factory!")
+                    total_price = shop.get_price(name) * quantity
+                    if player.cookies.get(shop.type_of_currency, 0) < total_price:
+                        print(f"You don't have enough {shop.type_of_currency}!")
+                        continue
 
-                    total_price = FactoryConfig.get_price(name) * quantity
+                    player.remove_cookie(shop.type_of_currency, total_price)
+                    player.add_factory(FactoryList(name), quantity)
+            case ["sell", name, quantity]:
+                with timer_lock:
+                    try:
+                        quantity = int(quantity)
+                        if quantity < 1:
+                            raise ValueError
+                    except ValueError:
+                        print("The quantity must be a whole positive number!")
+                        continue
 
-                    if player.cookies.get(Cookie.COOKIE, 0) < total_price:
-                        raise ValueError("You don't have enough Cookies!")
+                    try:
+                        if FactoryList(name) not in player.factories:
+                            raise ValueError
+                    except ValueError:
+                        print("There's no such factory!")
+                        continue
 
-                    player.remove_cookie(Cookie.COOKIE, total_price)
-                    player.add_factory(name, quantity)
-                case ["sell", name, quantity]:
-                    timer_lock.acquire()
-                    is_acquired = True
-
-                    quantity = int(quantity)
-
-                    if quantity < 1:
-                        raise ValueError("The quantity must be a positive number!")
-                    if name not in player.factories:
-                        raise ValueError("There's no such factory!")
-                    if quantity > player.factories.get(name).quantity:
+                    if quantity > player.factories.get(FactoryList(name)).quantity:
                         raise ValueError("You can't sell more than you have!")
 
-                    total_price = FactoryConfig.get_price(name) * quantity
-                    player.add_cookie(Cookie.COOKIE, total_price)
-                    player.remove_factory(name, quantity)
-                case ["back"] | ["b"]:
-                    break
-                case _:
-                    print(
-                        "Write 'back'/'b' or for example",
-                        "\n'buy takodachi 1'",
-                        "\n<buy/sell> <factory-name> <quantity>",
-                    )
-        except ValueError as error:
-            if "invalid literal for int() with base 10" in str(error):
-                print("The quantity must be a whole number!")
-            else:
-                print(error)
-        finally:
-            if timer_lock.locked() and is_acquired:
-                timer_lock.release()
+                    total_price = shop.get_price(name) * quantity
+                    player.add_cookie(shop.type_of_currency, total_price)
+                    player.remove_factory(FactoryList(name), quantity)
+            case ["back"] | ["b"]:
+                break
+            case _:
+                print(
+                    "Write 'back'/'b' or for example",
+                    "\n'buy takodachi 1'",
+                    "\n<buy/sell> <factory-name> <quantity>",
+                )
 
 
 def luck_menu(player: Player) -> None:
@@ -167,7 +171,7 @@ def main() -> None:
             "\n~Menu~",
             "1. Cookies",
             "2. Create cookie",
-            "3. Factory",
+            "3. Factory shop",
             "4. I'm lucky",
             "exit - Exit",
             sep="\n\t",
@@ -181,7 +185,7 @@ def main() -> None:
             case "2":
                 create_cookie_menu(player)
             case "3":
-                factory_menu(player)
+                factory_shop_menu(player)
             case "4":
                 luck_menu(player)
             case _:

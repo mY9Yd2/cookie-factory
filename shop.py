@@ -20,13 +20,46 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from enum import Enum, unique
+from abc import ABC, abstractmethod
+from enum import Enum
+
+from factory import FactoryList
+from cookie import Cookie
 
 
-@unique
-class Cookie(Enum):
-    COOKIE = "cookie"
-    DARK_CHOCOLATE_COOKIE = "dark chocolate cookie"
+class Shop(ABC):
+    @property
+    @abstractmethod
+    def type_of_currency(self) -> Cookie:
+        pass
 
-    def __str__(self) -> str:
-        return self.value.capitalize()
+    @property
+    @abstractmethod
+    def items(self) -> list[Enum]:
+        pass
+
+    @abstractmethod
+    def get_price(self, item: str) -> int:
+        pass
+
+
+class FactoryShop(Shop):
+    def __init__(self) -> None:
+        self._items = {
+            FactoryList.TAKODACHI: 5,
+            FactoryList.ROBOT: 25,
+            FactoryList.FARM: 500,
+            FactoryList.MINE: 5000,
+        }
+
+    @property
+    def type_of_currency(self) -> Cookie:
+        return Cookie.COOKIE
+
+    @property
+    def items(self) -> list[Enum]:
+        return list(self._items)
+
+    def get_price(self, item: str) -> int:
+        factory = FactoryList(item)
+        return self._items[factory]

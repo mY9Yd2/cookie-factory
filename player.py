@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-#
 # MIT License
 #
 # Copyright (c) 2023 Kovács József Miklós
@@ -23,14 +21,14 @@
 # SOFTWARE.
 
 from cookie import Cookie
-from factory import Factory, FactoryCreator
+from factory import FactoryList, SimpleFactory
 from effect import Effect
 
 
 class Player:
     def __init__(self) -> None:
         self.cookies: dict[Cookie, int] = dict()
-        self.factories: dict[str, Factory] = dict()
+        self.factories: dict[FactoryList, SimpleFactory] = dict()
         self.effects: set[Effect] = set()
 
     def add_cookie(self, cookie: Cookie, quantity: int) -> None:
@@ -42,16 +40,16 @@ class Player:
         else:
             self.cookies.update({cookie: self.cookies.get(cookie) - quantity})
 
-    def add_factory(self, factory_name: str, quantity: int) -> None:
-        factory = self.factories.get(
-            factory_name,
-            FactoryCreator.create_from_name(factory_name),
+    def add_factory(self, factory: FactoryList, quantity: int) -> None:
+        _factory = self.factories.get(
+            factory,
+            FactoryList.create(factory),
         )
-        factory.quantity += quantity
-        self.factories.update({factory_name: factory})
+        _factory.quantity += quantity
+        self.factories.update({factory: _factory})
 
-    def remove_factory(self, factory_name: str, quantity: int) -> None:
-        if quantity > self.factories.get(factory_name).quantity:
-            self.factories.get(factory_name).quantity = 0
+    def remove_factory(self, factory: FactoryList, quantity: int) -> None:
+        if quantity > self.factories.get(factory).quantity:
+            self.factories.get(factory).quantity = 0
         else:
-            self.factories.get(factory_name).quantity -= quantity
+            self.factories.get(factory).quantity -= quantity

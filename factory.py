@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-#
 # MIT License
 #
 # Copyright (c) 2023 Kovács József Miklós
@@ -22,50 +20,51 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from enum import Enum
+from abc import ABC, abstractmethod
+from enum import Enum, unique
+
 from cookie import Cookie
 
 
-class FactoryConfig(Enum):
-    TAKODACHI = {
-        "name": "takodachi",
-        "price": 5,
-        "production_volume": {Cookie.COOKIE: 1},
-    }
-    ROBOT = {"name": "robot", "price": 25, "production_volume": {Cookie.COOKIE: 10}}
-    FARM = {"name": "farm", "price": 500, "production_volume": {Cookie.COOKIE: 100}}
-    MINE = {
-        "name": "mine",
-        "price": 5000,
-        "production_volume": {Cookie.COOKIE: 250, Cookie.DARK_CHOCOLATE_COOKIE: 1},
-    }
+class Factory(ABC):
+    @property
+    @abstractmethod
+    def name(self) -> str:
+        pass
 
-    @staticmethod
-    def get_price(name: str) -> int:
-        price = None
-        for config in FactoryConfig:
-            if config.value.get("name") == name:
-                price = config.value.get("price")
-                break
-        return price
-
-    @staticmethod
-    def is_exist(name: str) -> bool:
-        is_exist = False
-        for config in FactoryConfig:
-            if config.value.get("name") == name:
-                is_exist = True
-                break
-        return is_exist
+    @abstractmethod
+    def produce_cookies(self) -> dict[Cookie, int]:
+        pass
 
 
-class Factory:
-    def __init__(self, factory_config: FactoryConfig) -> None:
-        self.quantity: int = 0
-        self.name: str = factory_config.value.get("name")
-        self.production_volume: dict[Cookie, int] = factory_config.value.get(
-            "production_volume"
-        )
+class ExtendedFactory(Factory):
+    @property
+    @abstractmethod
+    def quantity(self) -> int:
+        pass
+
+    @quantity.setter
+    @abstractmethod
+    def quantity(self, value) -> None:
+        pass
+
+    @property
+    @abstractmethod
+    def production_volume(self) -> dict[Cookie, int]:
+        pass
+
+
+class SimpleFactory(ExtendedFactory):
+    def __init__(self) -> None:
+        self._quantity: int = 0
+
+    @property
+    def quantity(self) -> int:
+        return self._quantity
+
+    @quantity.setter
+    def quantity(self, value: int) -> None:
+        self._quantity = value
 
     def produce_cookies(self) -> dict[Cookie, int]:
         cookies = dict()
@@ -74,16 +73,65 @@ class Factory:
         return cookies
 
 
-class FactoryCreator:
-    @staticmethod
-    def create(factory_config: FactoryConfig) -> Factory:
-        return Factory(factory_config)
+class Takodachi(SimpleFactory):
+    @property
+    def name(self) -> str:
+        return FactoryList.TAKODACHI.value
 
-    @staticmethod
-    def create_from_name(name: str) -> Factory:
-        _config = None
-        for config in FactoryConfig:
-            if config.value.get("name") == name:
-                _config = config
-                break
-        return FactoryCreator.create(_config)
+    @property
+    def production_volume(self) -> dict[Cookie, int]:
+        return {Cookie.COOKIE: 1}
+
+
+class Robot(SimpleFactory):
+    @property
+    def name(self) -> str:
+        return FactoryList.ROBOT.value
+
+    @property
+    def production_volume(self) -> dict[Cookie, int]:
+        return {Cookie.COOKIE: 10}
+
+
+class Farm(SimpleFactory):
+    @property
+    def name(self) -> str:
+        return FactoryList.FARM.value
+
+    @property
+    def production_volume(self) -> dict[Cookie, int]:
+        return {Cookie.COOKIE: 100}
+
+
+class Mine(SimpleFactory):
+    @property
+    def name(self) -> str:
+        return FactoryList.MINE.value
+
+    @property
+    def production_volume(self) -> dict[Cookie, int]:
+        return {Cookie.COOKIE: 250, Cookie.DARK_CHOCOLATE_COOKIE: 1}
+
+
+@unique
+class FactoryList(Enum):
+    TAKODACHI = "takodachi"
+    ROBOT = "robot"
+    FARM = "farm"
+    MINE = "mine"
+
+    def __str__(self) -> str:
+        return self.value.capitalize()
+
+    def create(self) -> SimpleFactory:
+        match self:
+            case FactoryList.TAKODACHI:
+                return Takodachi()
+            case FactoryList.ROBOT:
+                return Robot()
+            case FactoryList.FARM:
+                return Farm()
+            case FactoryList.MINE:
+                return Mine()
+            case _:
+                raise ValueError("There's no such factory!")

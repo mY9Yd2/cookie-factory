@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-#
 # MIT License
 #
 # Copyright (c) 2023 Kovács József Miklós
@@ -22,13 +20,13 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from factory import Factory, FactoryConfig
+from enum import Enum, unique
+
+from factory import Factory, FactoryList
 from cookie import Cookie
 
 
 class Effect(Factory):
-    _factory: Factory = None
-
     def __init__(self, factory: Factory) -> None:
         self._factory = factory
 
@@ -47,11 +45,9 @@ class Effect(Factory):
 class Inanis(Effect):
     def produce_cookies(self) -> dict[Cookie, int]:
         cookies = self.factory.produce_cookies()
-        multiplier = 1
-        if self.name == FactoryConfig.TAKODACHI.value.get("name"):
-            multiplier = 2
-        new_value = cookies.get(Cookie.COOKIE, 0) * multiplier
-        cookies.update({Cookie.COOKIE: new_value})
+        if FactoryList(self.factory.name) == FactoryList.TAKODACHI:
+            cookie = cookies.get(Cookie.COOKIE, 0)
+            cookies.update({Cookie.COOKIE: cookie * 2})
         return cookies
 
 
@@ -61,3 +57,21 @@ class Darkness(Effect):
         new_value = cookies.get(Cookie.DARK_CHOCOLATE_COOKIE, 0) * 2
         cookies.update({Cookie.DARK_CHOCOLATE_COOKIE: new_value})
         return cookies
+
+
+@unique
+class EffectList(Enum):
+    INANIS = "inanis"
+    DARKNESS = "darkness"
+
+    def __str__(self) -> str:
+        return self.value.capitalize()
+
+    def create(self) -> Effect:
+        match self:
+            case EffectList.INANIS:
+                return Inanis
+            case EffectList.DARKNESS:
+                return Darkness
+            case _:
+                raise ValueError("There's no such effect!")
