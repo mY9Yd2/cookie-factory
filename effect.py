@@ -20,6 +20,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import random
+
 from enum import Enum, unique
 
 from factory import Factory, FactoryList
@@ -54,8 +56,18 @@ class Inanis(Effect):
 class Darkness(Effect):
     def produce_cookies(self) -> dict[Cookie, int]:
         cookies = self.factory.produce_cookies()
-        new_value = cookies.get(Cookie.DARK_CHOCOLATE_COOKIE, 0) * 2
-        cookies.update({Cookie.DARK_CHOCOLATE_COOKIE: new_value})
+        cookie = cookies.get(Cookie.DARK_CHOCOLATE_COOKIE)
+        if cookie is not None:
+            cookies.update({Cookie.DARK_CHOCOLATE_COOKIE: cookie * 2})
+        return cookies
+
+
+class Luck(Effect):
+    def produce_cookies(self) -> dict[Cookie, int]:
+        cookies = self.factory.produce_cookies()
+        if random.choices((True, False), weights=[1, 50], k=1)[0]:
+            for cookie, value in cookies.items():
+                cookies.update({cookie: value + 5})
         return cookies
 
 
@@ -63,6 +75,7 @@ class Darkness(Effect):
 class EffectList(Enum):
     INANIS = "inanis"
     DARKNESS = "darkness"
+    LUCK = "luck"
 
     def __str__(self) -> str:
         return self.value.capitalize()
@@ -73,5 +86,7 @@ class EffectList(Enum):
                 return Inanis
             case EffectList.DARKNESS:
                 return Darkness
+            case EffectList.LUCK:
+                return Luck
             case _:
                 raise ValueError("There's no such effect!")

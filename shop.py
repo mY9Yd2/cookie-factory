@@ -24,6 +24,7 @@ from abc import ABC, abstractmethod
 from enum import Enum
 
 from factory import FactoryList
+from effect import EffectList
 from cookie import Cookie
 
 
@@ -63,3 +64,20 @@ class FactoryShop(Shop):
     def get_price(self, item: str) -> int:
         factory = FactoryList(item)
         return self._items[factory]
+
+
+class EffectShop(Shop):
+    def __init__(self) -> None:
+        self._items = {EffectList.LUCK: 50}
+
+    @property
+    def type_of_currency(self) -> Cookie:
+        return Cookie.DARK_CHOCOLATE_COOKIE
+
+    @property
+    def items(self) -> list[Enum]:
+        return list(self._items)
+
+    def get_price(self, item: str) -> int:
+        effect = EffectList(item)
+        return self._items[effect]

@@ -32,7 +32,7 @@ from player import Player
 from cookie import Cookie
 
 from factory import FactoryList
-from shop import FactoryShop
+from shop import FactoryShop, EffectShop
 
 timer_lock = threading.Lock()
 
@@ -127,6 +127,49 @@ def factory_shop_menu(player: Player) -> None:
                 )
 
 
+def effect_shop_menu(player: Player) -> None:
+    while True:
+        print("\n~Effect shop~")
+        shop = EffectShop()
+        with timer_lock:
+            for item in shop.items:
+                player_effect = (
+                    "+" if item.create() in player.effects else shop.get_price(item)
+                )
+                print(f"\t{item} : {player_effect}")
+
+        match input("Choice: ").split():
+            case ["buy", name]:
+                with timer_lock:
+                    try:
+                        _effect = effect.EffectList(name)
+                        if _effect not in shop.items:
+                            raise ValueError
+                    except ValueError:
+                        print("There's no such effect!")
+                        continue
+
+                    if _effect.create() in player.effects:
+                        print("You already bought this")
+                        continue
+
+                    price = shop.get_price(name)
+                    if player.cookies.get(shop.type_of_currency, 0) < price:
+                        print(f"You don't have enough {shop.type_of_currency}!")
+                        continue
+
+                    player.remove_cookie(shop.type_of_currency, price)
+                    player.effects.add(_effect.create())
+            case ["back"] | ["b"]:
+                break
+            case _:
+                print(
+                    "Write 'back'/'b' or for example",
+                    "\n'buy luck'",
+                    "\n<buy> <effect-name>",
+                )
+
+
 def luck_menu(player: Player) -> None:
     print("\n~I'm lucky~")
     _effect = random.choices(
@@ -173,6 +216,7 @@ def main() -> None:
             "2. Create cookie",
             "3. Factory shop",
             "4. I'm lucky",
+            "5. Effect shop",
             "exit - Exit",
             sep="\n\t",
         )
@@ -188,6 +232,8 @@ def main() -> None:
                 factory_shop_menu(player)
             case "4":
                 luck_menu(player)
+            case "5":
+                effect_shop_menu(player)
             case _:
                 print("..?")
 
