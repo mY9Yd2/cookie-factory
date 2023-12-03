@@ -60,14 +60,16 @@ def cookies_menu(player: Player) -> None:
 def factory_shop_menu(player: Player) -> None:
     while True:
         print("\n~Factory shop~")
-        shop = FactoryShop()
+        shop = FactoryShop(player)
         with timer_lock:
             for item in shop.items:
                 player_factory = player.factories.get(item)
                 player_factory_quantity = (
                     0 if player_factory is None else player_factory.quantity
                 )
-                print(f"\t{item} : {player_factory_quantity}")
+                print(
+                    f"\t{item} : {shop.get_buy_price(item)} ({player_factory_quantity})"
+                )
 
         match input("Choice: ").split():
             case ["buy", name, quantity]:
@@ -87,13 +89,21 @@ def factory_shop_menu(player: Player) -> None:
                         print("There's no such factory!")
                         continue
 
-                    total_price = shop.get_price(name) * quantity
+                    try:
+                        total_price = shop.get_buy_price(name, quantity)
+                    except OverflowError:
+                        print("Too much!")
+                        continue
+
                     if player.cookies.get(shop.type_of_currency, 0) < total_price:
                         print(f"You don't have enough {shop.type_of_currency}!")
+                        print(f"It costs {total_price} {shop.type_of_currency}")
                         continue
 
                     player.remove_cookie(shop.type_of_currency, total_price)
                     player.add_factory(FactoryList(name), quantity)
+                    print(f"-{total_price} {shop.type_of_currency}")
+                    print(f"+{quantity} {FactoryList(name)}")
             case ["sell", name, quantity]:
                 with timer_lock:
                     try:
@@ -112,11 +122,14 @@ def factory_shop_menu(player: Player) -> None:
                         continue
 
                     if quantity > player.factories.get(FactoryList(name)).quantity:
-                        raise ValueError("You can't sell more than you have!")
+                        print("You can't sell more than you have!")
+                        continue
 
-                    total_price = shop.get_price(name) * quantity
+                    total_price = shop.get_sell_price(name, quantity)
                     player.add_cookie(shop.type_of_currency, total_price)
                     player.remove_factory(FactoryList(name), quantity)
+                    print(f"-{quantity} {FactoryList(name)}")
+                    print(f"+{total_price} {shop.type_of_currency}")
             case ["back"] | ["b"]:
                 break
             case _:
@@ -130,11 +143,11 @@ def factory_shop_menu(player: Player) -> None:
 def effect_shop_menu(player: Player) -> None:
     while True:
         print("\n~Effect shop~")
-        shop = EffectShop()
+        shop = EffectShop(player)
         with timer_lock:
             for item in shop.items:
                 player_effect = (
-                    "+" if item.create() in player.effects else shop.get_price(item)
+                    "+" if item.create() in player.effects else shop.get_buy_price(item)
                 )
                 print(f"\t{item} : {player_effect}")
 
@@ -153,13 +166,15 @@ def effect_shop_menu(player: Player) -> None:
                         print("You already bought this")
                         continue
 
-                    price = shop.get_price(name)
+                    price = shop.get_buy_price(name)
                     if player.cookies.get(shop.type_of_currency, 0) < price:
                         print(f"You don't have enough {shop.type_of_currency}!")
                         continue
 
                     player.remove_cookie(shop.type_of_currency, price)
                     player.effects.add(_effect.create())
+                    print(f"-{price} {shop.type_of_currency}")
+                    print(f"+{_effect}")
             case ["back"] | ["b"]:
                 break
             case _:

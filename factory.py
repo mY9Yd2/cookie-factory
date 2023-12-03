@@ -90,7 +90,7 @@ class Robot(SimpleFactory):
 
     @property
     def production_volume(self) -> dict[Cookie, int]:
-        return {Cookie.COOKIE: 10}
+        return {Cookie.COOKIE: 8}
 
 
 class Farm(SimpleFactory):
@@ -100,7 +100,7 @@ class Farm(SimpleFactory):
 
     @property
     def production_volume(self) -> dict[Cookie, int]:
-        return {Cookie.COOKIE: 100}
+        return {Cookie.COOKIE: 47}
 
 
 class Mine(SimpleFactory):
@@ -110,7 +110,7 @@ class Mine(SimpleFactory):
 
     @property
     def production_volume(self) -> dict[Cookie, int]:
-        return {Cookie.COOKIE: 250, Cookie.DARK_CHOCOLATE_COOKIE: 1}
+        return {Cookie.COOKIE: 260, Cookie.DARK_CHOCOLATE_COOKIE: 1}
 
 
 @unique

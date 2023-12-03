@@ -23,12 +23,16 @@
 from abc import ABC, abstractmethod
 from enum import Enum
 
+from player import Player
 from factory import FactoryList
 from effect import EffectList
 from cookie import Cookie
 
 
 class Shop(ABC):
+    def __init__(self, player: Player) -> None:
+        self._player = player
+
     @property
     @abstractmethod
     def type_of_currency(self) -> Cookie:
@@ -40,18 +44,25 @@ class Shop(ABC):
         pass
 
     @abstractmethod
-    def get_price(self, item: str) -> int:
+    def get_buy_price(self, item: str, quantity: int = 1) -> int:
         pass
 
 
-class FactoryShop(Shop):
-    def __init__(self) -> None:
+class ShopWithSellOption(Shop):
+    @abstractmethod
+    def get_sell_price(self, item: str, quantity: int = 1) -> int:
+        pass
+
+
+class FactoryShop(ShopWithSellOption):
+    def __init__(self, player: Player) -> None:
         self._items = {
             FactoryList.TAKODACHI: 5,
-            FactoryList.ROBOT: 25,
-            FactoryList.FARM: 500,
-            FactoryList.MINE: 5000,
+            FactoryList.ROBOT: 67,
+            FactoryList.FARM: 733,
+            FactoryList.MINE: 8000,
         }
+        super().__init__(player)
 
     @property
     def type_of_currency(self) -> Cookie:
@@ -61,14 +72,40 @@ class FactoryShop(Shop):
     def items(self) -> list[Enum]:
         return list(self._items)
 
-    def get_price(self, item: str) -> int:
+    def get_buy_price(self, item: str, quantity: int = 1) -> int:
         factory = FactoryList(item)
-        return self._items[factory]
+        base_cost = self._items[factory]
+
+        player_factory = self._player.factories.get(factory)
+        player_quantity = 0 if player_factory is None else player_factory.quantity
+
+        total_price = 0
+        for _ in range(quantity):
+            total_price += round(base_cost * (1.15**player_quantity))
+            player_quantity += 1
+
+        return total_price
+
+    def get_sell_price(self, item: str, quantity: int = 1) -> int:
+        factory = FactoryList(item)
+        base_cost = self._items[factory]
+
+        player_factory = self._player.factories.get(factory)
+        player_quantity = 0 if player_factory is None else player_factory.quantity
+
+        total_price = 0
+        player_quantity -= quantity
+        for _ in range(quantity):
+            total_price += round(base_cost * (1.15**player_quantity))
+            player_quantity += 1
+
+        return total_price
 
 
 class EffectShop(Shop):
-    def __init__(self) -> None:
+    def __init__(self, player: Player) -> None:
         self._items = {EffectList.LUCK: 50}
+        super().__init__(player)
 
     @property
     def type_of_currency(self) -> Cookie:
@@ -78,6 +115,6 @@ class EffectShop(Shop):
     def items(self) -> list[Enum]:
         return list(self._items)
 
-    def get_price(self, item: str) -> int:
+    def get_buy_price(self, item: str, quantity: int = 1) -> int:
         effect = EffectList(item)
         return self._items[effect]
