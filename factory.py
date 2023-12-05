@@ -123,7 +123,7 @@ class FactoryList(Enum):
     def __str__(self) -> str:
         return self.value.capitalize()
 
-    def create(self) -> SimpleFactory:
+    def create(self) -> ExtendedFactory:
         match self:
             case FactoryList.TAKODACHI:
                 return Takodachi()

@@ -21,14 +21,14 @@
 # SOFTWARE.
 
 from cookie import Cookie
-from factory import FactoryList, SimpleFactory
+from factory import FactoryList, ExtendedFactory
 from effect import Effect
 
 
 class Player:
     def __init__(self) -> None:
         self.cookies: dict[Cookie, int] = dict()
-        self.factories: dict[FactoryList, SimpleFactory] = dict()
+        self.factories: dict[FactoryList, ExtendedFactory] = dict()
         self.effects: set[Effect] = set()
 
     def add_cookie(self, cookie: Cookie, quantity: int) -> None:
