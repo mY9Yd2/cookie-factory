@@ -22,71 +22,71 @@
 
 import random
 
-from enum import Enum, unique
+from functools import reduce
+from typing import Callable
+from enum import StrEnum, auto, unique
 
-from factory import Factory, FactoryList
+from factory import Factory, FactoryInfo
 from cookie import Cookie
 
 
-class Effect(Factory):
-    def __init__(self, factory: Factory) -> None:
-        self._factory = factory
-
-    @property
-    def factory(self) -> Factory:
-        return self._factory
-
-    @property
-    def name(self) -> str:
-        return self._factory.name
-
-    def produce_cookies(self) -> dict[Cookie, int]:
-        return self._factory.produce_cookies()
+EffectFn = Callable[[FactoryInfo], FactoryInfo]
 
 
-class Inanis(Effect):
-    def produce_cookies(self) -> dict[Cookie, int]:
-        cookies = self.factory.produce_cookies()
-        if FactoryList(self.factory.name) == FactoryList.TAKODACHI:
-            cookie = cookies.get(Cookie.COOKIE, 0)
-            cookies.update({Cookie.COOKIE: cookie * 2})
-        return cookies
+class EffectNotFound(Exception):
+    pass
 
 
-class Darkness(Effect):
-    def produce_cookies(self) -> dict[Cookie, int]:
-        cookies = self.factory.produce_cookies()
-        cookie = cookies.get(Cookie.DARK_CHOCOLATE_COOKIE)
-        if cookie is not None:
-            cookies.update({Cookie.DARK_CHOCOLATE_COOKIE: cookie * 2})
-        return cookies
+def effect_composition(*func: EffectFn) -> EffectFn:
+    def compose(f: EffectFn, g: EffectFn) -> EffectFn:
+        return lambda x: f(g(x))
+
+    return reduce(compose, func, lambda x: x)
 
 
-class Luck(Effect):
-    def produce_cookies(self) -> dict[Cookie, int]:
-        cookies = self.factory.produce_cookies()
-        if random.choices((True, False), weights=[1, 50], k=1)[0]:
-            for cookie, value in cookies.items():
-                cookies.update({cookie: value + 5})
-        return cookies
+def inanis(factory: FactoryInfo) -> FactoryInfo:
+    if factory.type is Factory.TAKODACHI:
+        factory.production_volume[Cookie.COOKIE] *= 2
+    return factory
+
+
+def darkness(factory: FactoryInfo) -> FactoryInfo:
+    if Cookie.DARK_CHOCOLATE_COOKIE in factory.production_volume:
+        factory.production_volume[Cookie.DARK_CHOCOLATE_COOKIE] *= 2
+    return factory
+
+
+def luck(factory: FactoryInfo) -> FactoryInfo:
+    if random.choices((True, False), weights=[1, 50], k=1)[0]:
+        for cookie in factory.production_volume.keys():
+            factory.production_volume[cookie] += 5
+    return factory
 
 
 @unique
-class EffectList(Enum):
-    INANIS = "inanis"
-    DARKNESS = "darkness"
-    LUCK = "luck"
+class PurchasableEffect(StrEnum):
+    LUCK = auto()
 
     def __str__(self) -> str:
         return self.value.capitalize()
 
-    def create(self) -> Effect:
-        match self:
-            case EffectList.INANIS:
-                return Inanis
-            case EffectList.DARKNESS:
-                return Darkness
-            case EffectList.LUCK:
-                return Luck
-            case _:
-                raise ValueError("There's no such effect!")
+
+@unique
+class ObtainableEffect(StrEnum):
+    INANIS = auto()
+    DARKNESS = auto()
+
+    def __str__(self) -> str:
+        return self.name.capitalize()
+
+
+def get_fn(item: StrEnum) -> EffectFn:
+    match item:
+        case ObtainableEffect.INANIS:
+            return inanis
+        case ObtainableEffect.DARKNESS:
+            return darkness
+        case PurchasableEffect.LUCK:
+            return luck
+        case _:
+            raise EffectNotFound("This effect does not exist!")

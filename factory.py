@@ -20,118 +20,33 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from abc import ABC, abstractmethod
-from enum import Enum, unique
+from enum import StrEnum, unique, auto
+from dataclasses import dataclass
 
 from cookie import Cookie
 
 
-class Factory(ABC):
-    @property
-    @abstractmethod
-    def name(self) -> str:
-        pass
-
-    @abstractmethod
-    def produce_cookies(self) -> dict[Cookie, int]:
-        pass
-
-
-class ExtendedFactory(Factory):
-    @property
-    @abstractmethod
-    def quantity(self) -> int:
-        pass
-
-    @quantity.setter
-    @abstractmethod
-    def quantity(self, value) -> None:
-        pass
-
-    @property
-    @abstractmethod
-    def production_volume(self) -> dict[Cookie, int]:
-        pass
-
-
-class SimpleFactory(ExtendedFactory):
-    def __init__(self) -> None:
-        self._quantity: int = 0
-
-    @property
-    def quantity(self) -> int:
-        return self._quantity
-
-    @quantity.setter
-    def quantity(self, value: int) -> None:
-        self._quantity = value
-
-    def produce_cookies(self) -> dict[Cookie, int]:
-        cookies = dict()
-        for cookie, volume in self.production_volume.items():
-            cookies[cookie] = self.quantity * volume
-        return cookies
-
-
-class Takodachi(SimpleFactory):
-    @property
-    def name(self) -> str:
-        return FactoryList.TAKODACHI.value
-
-    @property
-    def production_volume(self) -> dict[Cookie, int]:
-        return {Cookie.COOKIE: 1}
-
-
-class Robot(SimpleFactory):
-    @property
-    def name(self) -> str:
-        return FactoryList.ROBOT.value
-
-    @property
-    def production_volume(self) -> dict[Cookie, int]:
-        return {Cookie.COOKIE: 8}
-
-
-class Farm(SimpleFactory):
-    @property
-    def name(self) -> str:
-        return FactoryList.FARM.value
-
-    @property
-    def production_volume(self) -> dict[Cookie, int]:
-        return {Cookie.COOKIE: 47}
-
-
-class Mine(SimpleFactory):
-    @property
-    def name(self) -> str:
-        return FactoryList.MINE.value
-
-    @property
-    def production_volume(self) -> dict[Cookie, int]:
-        return {Cookie.COOKIE: 260, Cookie.DARK_CHOCOLATE_COOKIE: 1}
-
-
 @unique
-class FactoryList(Enum):
-    TAKODACHI = "takodachi"
-    ROBOT = "robot"
-    FARM = "farm"
-    MINE = "mine"
+class Factory(StrEnum):
+    TAKODACHI = auto()
+    ROBOT = auto()
+    FARM = auto()
+    MINE = auto()
 
     def __str__(self) -> str:
         return self.value.capitalize()
 
-    def create(self) -> ExtendedFactory:
-        match self:
-            case FactoryList.TAKODACHI:
-                return Takodachi()
-            case FactoryList.ROBOT:
-                return Robot()
-            case FactoryList.FARM:
-                return Farm()
-            case FactoryList.MINE:
-                return Mine()
-            case _:
-                raise ValueError("There's no such factory!")
+
+def get_production_volume(factory: Factory) -> dict[Cookie, int]:
+    return {
+        Factory.TAKODACHI: {Cookie.COOKIE: 1},
+        Factory.ROBOT: {Cookie.COOKIE: 8},
+        Factory.FARM: {Cookie.COOKIE: 47},
+        Factory.MINE: {Cookie.COOKIE: 260, Cookie.DARK_CHOCOLATE_COOKIE: 1},
+    }[factory]
+
+
+@dataclass
+class FactoryInfo:
+    type: Factory
+    production_volume: dict[Cookie, int]

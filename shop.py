@@ -20,101 +20,148 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from abc import ABC, abstractmethod
-from enum import Enum
-
 from player import Player
-from factory import FactoryList
-from effect import EffectList
+from factory import Factory
 from cookie import Cookie
+from effect import PurchasableEffect, get_fn
 
 
-class Shop(ABC):
-    def __init__(self, player: Player) -> None:
-        self._player = player
-
-    @property
-    @abstractmethod
-    def type_of_currency(self) -> Cookie:
-        pass
-
-    @property
-    @abstractmethod
-    def items(self) -> list[Enum]:
-        pass
-
-    @abstractmethod
-    def get_buy_price(self, item: str, quantity: int = 1) -> int:
-        pass
+class NotEnoughCookie(Exception):
+    pass
 
 
-class ShopWithSellOption(Shop):
-    @abstractmethod
-    def get_sell_price(self, item: str, quantity: int = 1) -> int:
-        pass
+class NotPositiveNumber(Exception):
+    pass
 
 
-class FactoryShop(ShopWithSellOption):
+class TooMuchCookie(Exception):
+    pass
+
+
+class NotEnoughFactory(Exception):
+    pass
+
+
+class EffectAlreadyExist(Exception):
+    pass
+
+
+class FactoryShop:
     def __init__(self, player: Player) -> None:
         self._items = {
-            FactoryList.TAKODACHI: 5,
-            FactoryList.ROBOT: 67,
-            FactoryList.FARM: 733,
-            FactoryList.MINE: 8000,
+            Factory.TAKODACHI: 5,
+            Factory.ROBOT: 67,
+            Factory.FARM: 733,
+            Factory.MINE: 8000,
         }
-        super().__init__(player)
+        self._player = player
 
     @property
     def type_of_currency(self) -> Cookie:
         return Cookie.COOKIE
 
     @property
-    def items(self) -> list[Enum]:
+    def items(self) -> list[Factory]:
         return list(self._items)
 
-    def get_buy_price(self, item: str, quantity: int = 1) -> int:
-        factory = FactoryList(item)
-        base_cost = self._items[factory]
+    def _get_base_price(self, item: Factory) -> int:
+        return self._items[item]
 
-        player_factory = self._player.factories.get(factory)
-        player_quantity = 0 if player_factory is None else player_factory.quantity
+    def get_price(self, item: Factory) -> int:
+        base_price = self._get_base_price(item)
+        initial_quantity = self._player.factories[item]
 
+        price = self._calculate_total_price(
+            initial_quantity=initial_quantity, quantity=1, base_price=base_price
+        )
+
+        return price
+
+    def _calculate_total_price(
+        self, initial_quantity: int, quantity: int, base_price: int
+    ) -> int:
         total_price = 0
         for _ in range(quantity):
-            total_price += round(base_cost * (1.15**player_quantity))
-            player_quantity += 1
+            try:
+                total_price += round(base_price * (1.15**initial_quantity))
+            except OverflowError as error:
+                raise TooMuchCookie("Too much!") from error
+            initial_quantity += 1
+        return total_price
+
+    def buy(self, item: Factory, quantity: int) -> int:
+        if quantity < 1:
+            raise NotPositiveNumber("The quantity must be a positive number!")
+
+        base_price = self._get_base_price(item)
+        initial_quantity = self._player.factories[item]
+
+        total_price = self._calculate_total_price(
+            initial_quantity, quantity, base_price
+        )
+
+        if total_price > self._player.cookies[self.type_of_currency]:
+            message = f"You don't have enough {self.type_of_currency}!"
+            message += f"\nIt costs {total_price} {self.type_of_currency}"
+
+            raise NotEnoughCookie(message)
+
+        self._player.cookies[self.type_of_currency] -= total_price
+        self._player.factories[item] += quantity
 
         return total_price
 
-    def get_sell_price(self, item: str, quantity: int = 1) -> int:
-        factory = FactoryList(item)
-        base_cost = self._items[factory]
+    def sell(self, item: Factory, quantity: int) -> int:
+        if quantity < 1:
+            raise NotPositiveNumber("The quantity must be a positive number!")
 
-        player_factory = self._player.factories.get(factory)
-        player_quantity = 0 if player_factory is None else player_factory.quantity
+        base_price = self._get_base_price(item)
+        initial_quantity = self._player.factories[item] - quantity
 
-        total_price = 0
-        player_quantity -= quantity
-        for _ in range(quantity):
-            total_price += round(base_cost * (1.15**player_quantity))
-            player_quantity += 1
+        if initial_quantity < 0:
+            raise NotEnoughFactory("You can't sell more than you have!")
+
+        total_price = self._calculate_total_price(
+            initial_quantity, quantity, base_price
+        )
+
+        self._player.cookies[self.type_of_currency] += total_price
+        self._player.factories[item] -= quantity
 
         return total_price
 
 
-class EffectShop(Shop):
+class EffectShop:
     def __init__(self, player: Player) -> None:
-        self._items = {EffectList.LUCK: 50}
-        super().__init__(player)
+        self._items = {
+            PurchasableEffect.LUCK: 50,
+        }
+        self._player = player
 
     @property
     def type_of_currency(self) -> Cookie:
         return Cookie.DARK_CHOCOLATE_COOKIE
 
     @property
-    def items(self) -> list[Enum]:
+    def items(self) -> list[PurchasableEffect]:
         return list(self._items)
 
-    def get_buy_price(self, item: str, quantity: int = 1) -> int:
-        effect = EffectList(item)
-        return self._items[effect]
+    def get_base_price(self, item: PurchasableEffect) -> int:
+        return self._items[item]
+
+    def buy(self, item: PurchasableEffect) -> int:
+        if get_fn(item) in self._player.effects:
+            raise EffectAlreadyExist("You already bought this!")
+
+        price = self.get_base_price(item)
+
+        if price > self._player.cookies[self.type_of_currency]:
+            message = f"You don't have enough {self.type_of_currency}!"
+            message += f"\nIt costs {price} {self.type_of_currency}"
+
+            raise NotEnoughCookie(message)
+
+        self._player.cookies[self.type_of_currency] -= price
+        self._player.effects.add(get_fn(item))
+
+        return price

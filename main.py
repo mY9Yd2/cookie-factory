@@ -26,15 +26,41 @@ import sys
 import threading
 import random
 
-import effect
+from collections import Counter
 
 from player import Player
+from factory import Factory, FactoryInfo, get_production_volume
+from shop import (
+    FactoryShop,
+    EffectShop,
+    NotEnoughCookie,
+    TooMuchCookie,
+    NotPositiveNumber,
+    NotEnoughFactory,
+    EffectAlreadyExist,
+)
+from effect import ObtainableEffect, PurchasableEffect, effect_composition, get_fn
 from cookie import Cookie
 
-from factory import FactoryList
-from shop import FactoryShop, EffectShop
-
 timer_lock = threading.Lock()
+
+
+def buy_factory(shop: FactoryShop, item: Factory, quantity: int) -> None:
+    try:
+        total_price = shop.buy(item, quantity)
+        print(f"-{total_price} {shop.type_of_currency}")
+        print(f"+{quantity} {item.capitalize()}")
+    except (NotEnoughCookie, TooMuchCookie, NotPositiveNumber) as error:
+        print(error)
+
+
+def sell_factory(shop: FactoryShop, item: Factory, quantity: int) -> None:
+    try:
+        total_price = shop.sell(item, quantity)
+        print(f"-{quantity} {item.capitalize()}")
+        print(f"+{total_price} {shop.type_of_currency}")
+    except (NotPositiveNumber, NotEnoughFactory) as error:
+        print(error)
 
 
 def create_cookie_menu(player: Player) -> None:
@@ -42,8 +68,8 @@ def create_cookie_menu(player: Player) -> None:
         match input("\nCookie? "):
             case "cookie":
                 with timer_lock:
-                    player.add_cookie(Cookie.COOKIE, 1)
-                print(f"+1 {Cookie.COOKIE.value.capitalize()}")
+                    player.cookies[Cookie.COOKIE] += 1
+                print(f"+1 {Cookie.COOKIE}")
             case "back" | "b":
                 break
             case _:
@@ -54,82 +80,40 @@ def cookies_menu(player: Player) -> None:
     print("\n~Cookies~")
     with timer_lock:
         for cookie, quantity in player.cookies.items():
-            print(f"\t{cookie.value.capitalize()} : {quantity}")
+            print(f"\t{cookie} : {quantity}")
 
 
 def factory_shop_menu(player: Player) -> None:
+    def _is_valid(item: str, quantity: str) -> bool:
+        is_valid = False
+        try:
+            item = Factory(item)
+            quantity = int(quantity)
+            is_valid = True
+        except ValueError as error:
+            if str(error).endswith("is not a valid Factory"):
+                print(error)
+            else:
+                print("The quantity must be a whole positive number!")
+        return is_valid
+
     while True:
         print("\n~Factory shop~")
         shop = FactoryShop(player)
         with timer_lock:
             for item in shop.items:
-                player_factory = player.factories.get(item)
-                player_factory_quantity = (
-                    0 if player_factory is None else player_factory.quantity
-                )
-                print(
-                    f"\t{item} : {shop.get_buy_price(item)} ({player_factory_quantity})"
-                )
+                quantity = player.factories.get(item, 0)
+                print(f"\t{item} : {shop.get_price(item)} ({quantity})")
 
         match input("Choice: ").split():
-            case ["buy", name, quantity]:
+            case ["buy", item, quantity]:
                 with timer_lock:
-                    try:
-                        quantity = int(quantity)
-                        if quantity < 1:
-                            raise ValueError
-                    except ValueError:
-                        print("The quantity must be a whole positive number!")
-                        continue
-
-                    try:
-                        if FactoryList(name) not in shop.items:
-                            raise ValueError
-                    except ValueError:
-                        print("There's no such factory!")
-                        continue
-
-                    try:
-                        total_price = shop.get_buy_price(name, quantity)
-                    except OverflowError:
-                        print("Too much!")
-                        continue
-
-                    if player.cookies.get(shop.type_of_currency, 0) < total_price:
-                        print(f"You don't have enough {shop.type_of_currency}!")
-                        print(f"It costs {total_price} {shop.type_of_currency}")
-                        continue
-
-                    player.remove_cookie(shop.type_of_currency, total_price)
-                    player.add_factory(FactoryList(name), quantity)
-                    print(f"-{total_price} {shop.type_of_currency}")
-                    print(f"+{quantity} {FactoryList(name)}")
-            case ["sell", name, quantity]:
+                    if _is_valid(item, quantity):
+                        buy_factory(shop, Factory(item), int(quantity))
+            case ["sell", item, quantity]:
                 with timer_lock:
-                    try:
-                        quantity = int(quantity)
-                        if quantity < 1:
-                            raise ValueError
-                    except ValueError:
-                        print("The quantity must be a whole positive number!")
-                        continue
-
-                    try:
-                        if FactoryList(name) not in player.factories:
-                            raise ValueError
-                    except ValueError:
-                        print("There's no such factory!")
-                        continue
-
-                    if quantity > player.factories.get(FactoryList(name)).quantity:
-                        print("You can't sell more than you have!")
-                        continue
-
-                    total_price = shop.get_sell_price(name, quantity)
-                    player.add_cookie(shop.type_of_currency, total_price)
-                    player.remove_factory(FactoryList(name), quantity)
-                    print(f"-{quantity} {FactoryList(name)}")
-                    print(f"+{total_price} {shop.type_of_currency}")
+                    if _is_valid(item, quantity):
+                        sell_factory(shop, Factory(item), int(quantity))
             case ["back"] | ["b"]:
                 break
             case _:
@@ -146,35 +130,27 @@ def effect_shop_menu(player: Player) -> None:
         shop = EffectShop(player)
         with timer_lock:
             for item in shop.items:
-                player_effect = (
-                    "+" if item.create() in player.effects else shop.get_buy_price(item)
+                status = (
+                    "+" if get_fn(item) in player.effects else shop.get_base_price(item)
                 )
-                print(f"\t{item} : {player_effect}")
+                print(f"\t{item} : {status}")
 
         match input("Choice: ").split():
             case ["buy", name]:
                 with timer_lock:
                     try:
-                        _effect = effect.EffectList(name)
-                        if _effect not in shop.items:
-                            raise ValueError
-                    except ValueError:
-                        print("There's no such effect!")
+                        item = PurchasableEffect(name)
+                    except ValueError as error:
+                        if str(error).endswith("is not a valid PurchasableEffect"):
+                            print(str(error).replace("PurchasableEffect", "Effect"))
                         continue
 
-                    if _effect.create() in player.effects:
-                        print("You already bought this")
-                        continue
-
-                    price = shop.get_buy_price(name)
-                    if player.cookies.get(shop.type_of_currency, 0) < price:
-                        print(f"You don't have enough {shop.type_of_currency}!")
-                        continue
-
-                    player.remove_cookie(shop.type_of_currency, price)
-                    player.effects.add(_effect.create())
-                    print(f"-{price} {shop.type_of_currency}")
-                    print(f"+{_effect}")
+                    try:
+                        price = shop.buy(item)
+                        print(f"-{price} {shop.type_of_currency}")
+                        print(f"+{PurchasableEffect(name)}")
+                    except (EffectAlreadyExist, NotEnoughCookie) as error:
+                        print(error)
             case ["back"] | ["b"]:
                 break
             case _:
@@ -187,32 +163,38 @@ def effect_shop_menu(player: Player) -> None:
 
 def luck_menu(player: Player) -> None:
     print("\n~I'm lucky~")
-    _effect = random.choices(
-        (None, effect.Inanis, effect.Darkness), weights=(100, 1, 1), k=1
+
+    effect = random.choices(
+        (None, ObtainableEffect.INANIS, ObtainableEffect.DARKNESS),
+        weights=(100, 1, 1),
+        k=1,
     )[0]
 
     with timer_lock:
-        if _effect is None:
+        if effect is None:
             print("No, you are not lucky.")
-        elif _effect in player.effects:
+        elif get_fn(effect) in player.effects:
             print("You already have a lot of luck.")
         else:
             print("You're really lucky!")
-            if _effect == effect.Inanis:
+            if effect == ObtainableEffect.INANIS:
                 print("Takodachis are working harder!")
-            elif _effect == effect.Darkness:
+            elif effect == ObtainableEffect.DARKNESS:
                 print("Dark chocolate cookies..")
-            player.effects.add(_effect)
+            player.effects.add(get_fn(effect))
 
 
 def timer(player: Player) -> None:
     with timer_lock:
-        for factory in player.factories.values():
-            for _effect in player.effects:
-                factory = _effect(factory)
-            cookies = factory.produce_cookies()
-            for cookie, quantity in cookies.items():
-                player.add_cookie(cookie, quantity)
+        produce_cookies = effect_composition(*player.effects)
+        for factory, quantity in player.factories.items():
+            info = FactoryInfo(factory, get_production_volume(factory))
+            cookies = Counter(produce_cookies(info).production_volume)
+
+            for cookie in cookies.keys():
+                cookies[cookie] *= quantity
+
+            player.cookies += cookies
 
     timer_thread = threading.Timer(1, timer, [player])
     timer_thread.daemon = True

@@ -20,13 +20,13 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from enum import Enum, unique
+from enum import StrEnum, unique, auto
 
 
 @unique
-class Cookie(Enum):
-    COOKIE = "cookie"
-    DARK_CHOCOLATE_COOKIE = "dark chocolate cookie"
+class Cookie(StrEnum):
+    COOKIE = auto()
+    DARK_CHOCOLATE_COOKIE = auto()
 
     def __str__(self) -> str:
-        return self.value.capitalize()
+        return self.value.replace("_", " ").capitalize()

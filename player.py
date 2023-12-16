@@ -20,36 +20,31 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+from collections import Counter
+
 from cookie import Cookie
-from factory import FactoryList, ExtendedFactory
-from effect import Effect
+from factory import Factory
+from effect import EffectFn
 
 
 class Player:
     def __init__(self) -> None:
-        self.cookies: dict[Cookie, int] = dict()
-        self.factories: dict[FactoryList, ExtendedFactory] = dict()
-        self.effects: set[Effect] = set()
+        self._cookies: Counter[Cookie] = Counter()
+        self._factories: Counter[Factory] = Counter()
+        self._effects: set[EffectFn] = set()
 
-    def add_cookie(self, cookie: Cookie, quantity: int) -> None:
-        self.cookies.update({cookie: self.cookies.get(cookie, 0) + quantity})
+    @property
+    def cookies(self) -> Counter[Cookie]:
+        return self._cookies
 
-    def remove_cookie(self, cookie: Cookie, quantity: int) -> None:
-        if quantity > self.cookies.get(cookie):
-            self.cookies.update({cookie: 0})
-        else:
-            self.cookies.update({cookie: self.cookies.get(cookie) - quantity})
+    @cookies.setter
+    def cookies(self, value) -> None:
+        self._cookies = value
 
-    def add_factory(self, factory: FactoryList, quantity: int) -> None:
-        _factory = self.factories.get(
-            factory,
-            FactoryList.create(factory),
-        )
-        _factory.quantity += quantity
-        self.factories.update({factory: _factory})
+    @property
+    def factories(self) -> Counter[Factory]:
+        return self._factories
 
-    def remove_factory(self, factory: FactoryList, quantity: int) -> None:
-        if quantity > self.factories.get(factory).quantity:
-            self.factories.get(factory).quantity = 0
-        else:
-            self.factories.get(factory).quantity -= quantity
+    @property
+    def effects(self) -> set[EffectFn]:
+        return self._effects
