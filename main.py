@@ -29,7 +29,7 @@ import random
 from collections import Counter
 
 from player import Player
-from factory import Factory, FactoryInfo, get_production_volume
+from factory import Factory, FactoryInfo
 from shop import (
     FactoryShop,
     EffectShop,
@@ -101,7 +101,7 @@ def factory_shop_menu(player: Player) -> None:
         print("\n~Factory shop~")
         shop = FactoryShop(player)
         with timer_lock:
-            for item in shop.items:
+            for item in Factory:
                 quantity = player.factories.get(item, 0)
                 print(f"\t{item} : {shop.get_price(item)} ({quantity})")
 
@@ -188,7 +188,7 @@ def timer(player: Player) -> None:
     with timer_lock:
         produce_cookies = effect_composition(*player.effects)
         for factory, quantity in player.factories.items():
-            info = FactoryInfo(factory, get_production_volume(factory))
+            info = FactoryInfo(factory, factory.production_volume)
             cookies = Counter(produce_cookies(info).production_volume)
 
             for cookie in cookies.keys():

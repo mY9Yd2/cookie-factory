@@ -48,31 +48,17 @@ class EffectAlreadyExist(Exception):
 
 class FactoryShop:
     def __init__(self, player: Player) -> None:
-        self._items = {
-            Factory.TAKODACHI: 5,
-            Factory.ROBOT: 67,
-            Factory.FARM: 733,
-            Factory.MINE: 8000,
-        }
         self._player = player
 
     @property
     def type_of_currency(self) -> Cookie:
         return Cookie.COOKIE
 
-    @property
-    def items(self) -> list[Factory]:
-        return list(self._items)
-
-    def _get_base_price(self, item: Factory) -> int:
-        return self._items[item]
-
     def get_price(self, item: Factory) -> int:
-        base_price = self._get_base_price(item)
         initial_quantity = self._player.factories[item]
 
         price = self._calculate_total_price(
-            initial_quantity=initial_quantity, quantity=1, base_price=base_price
+            initial_quantity=initial_quantity, quantity=1, base_price=item.base_price
         )
 
         return price
@@ -93,11 +79,10 @@ class FactoryShop:
         if quantity < 1:
             raise NotPositiveNumber("The quantity must be a positive number!")
 
-        base_price = self._get_base_price(item)
         initial_quantity = self._player.factories[item]
 
         total_price = self._calculate_total_price(
-            initial_quantity, quantity, base_price
+            initial_quantity, quantity, item.base_price
         )
 
         if total_price > self._player.cookies[self.type_of_currency]:
@@ -115,14 +100,13 @@ class FactoryShop:
         if quantity < 1:
             raise NotPositiveNumber("The quantity must be a positive number!")
 
-        base_price = self._get_base_price(item)
         initial_quantity = self._player.factories[item] - quantity
 
         if initial_quantity < 0:
             raise NotEnoughFactory("You can't sell more than you have!")
 
         total_price = self._calculate_total_price(
-            initial_quantity, quantity, base_price
+            initial_quantity, quantity, item.base_price
         )
 
         self._player.cookies[self.type_of_currency] += total_price

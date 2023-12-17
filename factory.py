@@ -33,17 +33,26 @@ class Factory(StrEnum):
     FARM = auto()
     MINE = auto()
 
+    @property
+    def production_volume(self) -> dict[Cookie, int]:
+        return {
+            Factory.TAKODACHI: {Cookie.COOKIE: 1},
+            Factory.ROBOT: {Cookie.COOKIE: 8},
+            Factory.FARM: {Cookie.COOKIE: 47},
+            Factory.MINE: {Cookie.COOKIE: 260, Cookie.DARK_CHOCOLATE_COOKIE: 1},
+        }[self]
+
+    @property
+    def base_price(self):
+        return {
+            Factory.TAKODACHI: 5,
+            Factory.ROBOT: 67,
+            Factory.FARM: 733,
+            Factory.MINE: 8000,
+        }[self]
+
     def __str__(self) -> str:
         return self.value.capitalize()
-
-
-def get_production_volume(factory: Factory) -> dict[Cookie, int]:
-    return {
-        Factory.TAKODACHI: {Cookie.COOKIE: 1},
-        Factory.ROBOT: {Cookie.COOKIE: 8},
-        Factory.FARM: {Cookie.COOKIE: 47},
-        Factory.MINE: {Cookie.COOKIE: 260, Cookie.DARK_CHOCOLATE_COOKIE: 1},
-    }[factory]
 
 
 @dataclass
