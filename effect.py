@@ -73,6 +73,16 @@ class PurchasableEffect(StrEnum):
             PurchasableEffect.LUCK: luck,
         }[self]
 
+    @property
+    def base_price(self):
+        return {
+            PurchasableEffect.LUCK: 50,
+        }[self]
+
+    @property
+    def type_of_currency(self) -> Cookie:
+        return Cookie.DARK_CHOCOLATE_COOKIE
+
     def __str__(self) -> str:
         return self.value.capitalize()
 

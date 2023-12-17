@@ -28,37 +28,35 @@ import random
 
 from collections import Counter
 
-from player import Player
-from factory import Factory, FactoryInfo
-from shop import (
-    FactoryShop,
-    EffectShop,
+from player import (
+    Player,
     NotEnoughCookie,
     TooMuchCookie,
     NotPositiveNumber,
     NotEnoughFactory,
     EffectAlreadyExist,
 )
+from factory import Factory, FactoryInfo
 from effect import ObtainableEffect, PurchasableEffect, effect_composition
 from cookie import Cookie
 
 timer_lock = threading.Lock()
 
 
-def buy_factory(shop: FactoryShop, item: Factory, quantity: int) -> None:
+def buy_factory(player: Player, item: Factory, quantity: int) -> None:
     try:
-        total_price = shop.buy(item, quantity)
-        print(f"-{total_price} {shop.type_of_currency}")
+        total_price = player.buy_factory(item, quantity)
+        print(f"-{total_price} {item.type_of_currency}")
         print(f"+{quantity} {item.capitalize()}")
     except (NotEnoughCookie, TooMuchCookie, NotPositiveNumber) as error:
         print(error)
 
 
-def sell_factory(shop: FactoryShop, item: Factory, quantity: int) -> None:
+def sell_factory(player: Player, item: Factory, quantity: int) -> None:
     try:
-        total_price = shop.sell(item, quantity)
+        total_price = player.sell_factory(item, quantity)
         print(f"-{quantity} {item.capitalize()}")
-        print(f"+{total_price} {shop.type_of_currency}")
+        print(f"+{total_price} {item.type_of_currency}")
     except (NotPositiveNumber, NotEnoughFactory) as error:
         print(error)
 
@@ -99,21 +97,24 @@ def factory_shop_menu(player: Player) -> None:
 
     while True:
         print("\n~Factory shop~")
-        shop = FactoryShop(player)
+
         with timer_lock:
             for item in Factory:
                 quantity = player.factories.get(item, 0)
-                print(f"\t{item} : {shop.get_price(item)} ({quantity})")
+                price = player.get_next_factory_price(
+                    player.factories[item], item.base_price
+                )
+                print(f"\t{item} : {price} ({quantity})")
 
         match input("Choice: ").split():
             case ["buy", item, quantity]:
                 with timer_lock:
                     if _is_valid(item, quantity):
-                        buy_factory(shop, Factory(item), int(quantity))
+                        buy_factory(player, Factory(item), int(quantity))
             case ["sell", item, quantity]:
                 with timer_lock:
                     if _is_valid(item, quantity):
-                        sell_factory(shop, Factory(item), int(quantity))
+                        sell_factory(player, Factory(item), int(quantity))
             case ["back"] | ["b"]:
                 break
             case _:
@@ -127,14 +128,10 @@ def factory_shop_menu(player: Player) -> None:
 def effect_shop_menu(player: Player) -> None:
     while True:
         print("\n~Effect shop~")
-        shop = EffectShop(player)
+
         with timer_lock:
-            for item in shop.items:
-                status = (
-                    "+"
-                    if item.function in player.effects
-                    else shop.get_base_price(item)
-                )
+            for item in PurchasableEffect:
+                status = "+" if item.function in player.effects else item.base_price
                 print(f"\t{item} : {status}")
 
         match input("Choice: ").split():
@@ -148,8 +145,8 @@ def effect_shop_menu(player: Player) -> None:
                         continue
 
                     try:
-                        price = shop.buy(item)
-                        print(f"-{price} {shop.type_of_currency}")
+                        price = player.buy_effect(item)
+                        print(f"-{price} {item.type_of_currency}")
                         print(f"+{PurchasableEffect(name)}")
                     except (EffectAlreadyExist, NotEnoughCookie) as error:
                         print(error)

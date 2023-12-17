@@ -51,6 +51,10 @@ class Factory(StrEnum):
             Factory.MINE: 8000,
         }[self]
 
+    @property
+    def type_of_currency(self) -> Cookie:
+        return Cookie.COOKIE
+
     def __str__(self) -> str:
         return self.value.capitalize()
 
