@@ -74,7 +74,7 @@ class PurchasableEffect(StrEnum):
         }[self]
 
     @property
-    def base_price(self):
+    def base_price(self) -> int:
         return {
             PurchasableEffect.LUCK: 50,
         }[self]

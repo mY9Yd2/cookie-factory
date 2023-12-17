@@ -43,7 +43,7 @@ class Factory(StrEnum):
         }[self]
 
     @property
-    def base_price(self):
+    def base_price(self) -> int:
         return {
             Factory.TAKODACHI: 5,
             Factory.ROBOT: 67,
