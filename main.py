@@ -140,8 +140,7 @@ def effect_shop_menu(player: Player) -> None:
                     try:
                         item = PurchasableEffect(name)
                     except ValueError as error:
-                        if str(error).endswith("is not a valid PurchasableEffect"):
-                            print(str(error).replace("PurchasableEffect", "Effect"))
+                        print(f"'{name}' is not a valid Effect")
                         continue
 
                     try:
