@@ -21,6 +21,7 @@
 # SOFTWARE.
 
 import random
+import copy
 
 from functools import reduce
 from typing import Callable
@@ -45,22 +46,25 @@ def effect_composition(*func: EffectFn) -> EffectFn:
 
 
 def inanis(factory: FactoryInfo) -> FactoryInfo:
-    if factory.type is Factory.TAKODACHI:
-        factory.production_volume[Cookie.COOKIE] *= 2
-    return factory
+    _factory = copy.deepcopy(factory)
+    if _factory.type is Factory.TAKODACHI:
+        _factory.production_volume[Cookie.COOKIE] *= 2
+    return _factory
 
 
 def darkness(factory: FactoryInfo) -> FactoryInfo:
-    if Cookie.DARK_CHOCOLATE_COOKIE in factory.production_volume:
-        factory.production_volume[Cookie.DARK_CHOCOLATE_COOKIE] *= 2
-    return factory
+    _factory = copy.deepcopy(factory)
+    if Cookie.DARK_CHOCOLATE_COOKIE in _factory.production_volume:
+        _factory.production_volume[Cookie.DARK_CHOCOLATE_COOKIE] *= 2
+    return _factory
 
 
 def luck(factory: FactoryInfo) -> FactoryInfo:
+    _factory = copy.deepcopy(factory)
     if random.choices((True, False), weights=[1, 50], k=1)[0]:
-        for cookie in factory.production_volume.keys():
-            factory.production_volume[cookie] += 5
-    return factory
+        for cookie in _factory.production_volume.keys():
+            _factory.production_volume[cookie] += 5
+    return _factory
 
 
 @unique
