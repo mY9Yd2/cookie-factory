@@ -30,13 +30,5 @@ from effect import EffectFn
 class Player:
     def __init__(self) -> None:
         self.cookies: Counter[Cookie] = Counter()
-        self._factories: Counter[Factory] = Counter()
-        self._effects: set[EffectFn] = set()
-
-    @property
-    def factories(self) -> Counter[Factory]:
-        return self._factories
-
-    @property
-    def effects(self) -> set[EffectFn]:
-        return self._effects
+        self.factories: Counter[Factory] = Counter()
+        self.effects: set[EffectFn] = set()
