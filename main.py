@@ -39,7 +39,7 @@ from shop import (
     NotEnoughFactory,
     EffectAlreadyExist,
 )
-from effect import ObtainableEffect, PurchasableEffect, effect_composition, get_fn
+from effect import ObtainableEffect, PurchasableEffect, effect_composition
 from cookie import Cookie
 
 timer_lock = threading.Lock()
@@ -131,7 +131,9 @@ def effect_shop_menu(player: Player) -> None:
         with timer_lock:
             for item in shop.items:
                 status = (
-                    "+" if get_fn(item) in player.effects else shop.get_base_price(item)
+                    "+"
+                    if item.function in player.effects
+                    else shop.get_base_price(item)
                 )
                 print(f"\t{item} : {status}")
 
@@ -173,7 +175,7 @@ def luck_menu(player: Player) -> None:
     with timer_lock:
         if effect is None:
             print("No, you are not lucky.")
-        elif get_fn(effect) in player.effects:
+        elif effect.function in player.effects:
             print("You already have a lot of luck.")
         else:
             print("You're really lucky!")
@@ -181,7 +183,7 @@ def luck_menu(player: Player) -> None:
                 print("Takodachis are working harder!")
             elif effect == ObtainableEffect.DARKNESS:
                 print("Dark chocolate cookies..")
-            player.effects.add(get_fn(effect))
+            player.effects.add(effect.function)
 
 
 def timer(player: Player) -> None:

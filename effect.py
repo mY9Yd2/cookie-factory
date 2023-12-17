@@ -34,10 +34,6 @@ from cookie import Cookie
 EffectFn = Callable[[FactoryInfo], FactoryInfo]
 
 
-class EffectNotFound(Exception):
-    pass
-
-
 def effect_composition(*func: EffectFn) -> EffectFn:
     def compose(f: EffectFn, g: EffectFn) -> EffectFn:
         return lambda x: f(g(x))
@@ -71,6 +67,12 @@ def luck(factory: FactoryInfo) -> FactoryInfo:
 class PurchasableEffect(StrEnum):
     LUCK = auto()
 
+    @property
+    def function(self) -> EffectFn:
+        return {
+            PurchasableEffect.LUCK: luck,
+        }[self]
+
     def __str__(self) -> str:
         return self.value.capitalize()
 
@@ -80,17 +82,12 @@ class ObtainableEffect(StrEnum):
     INANIS = auto()
     DARKNESS = auto()
 
+    @property
+    def function(self) -> EffectFn:
+        return {
+            ObtainableEffect.INANIS: inanis,
+            ObtainableEffect.DARKNESS: darkness,
+        }[self]
+
     def __str__(self) -> str:
         return self.name.capitalize()
-
-
-def get_fn(item: StrEnum) -> EffectFn:
-    match item:
-        case ObtainableEffect.INANIS:
-            return inanis
-        case ObtainableEffect.DARKNESS:
-            return darkness
-        case PurchasableEffect.LUCK:
-            return luck
-        case _:
-            raise EffectNotFound("This effect does not exist!")

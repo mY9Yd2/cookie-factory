@@ -23,7 +23,7 @@
 from player import Player
 from factory import Factory
 from cookie import Cookie
-from effect import PurchasableEffect, get_fn
+from effect import PurchasableEffect
 
 
 class NotEnoughCookie(Exception):
@@ -134,7 +134,7 @@ class EffectShop:
         return self._items[item]
 
     def buy(self, item: PurchasableEffect) -> int:
-        if get_fn(item) in self._player.effects:
+        if item.function in self._player.effects:
             raise EffectAlreadyExist("You already bought this!")
 
         price = self.get_base_price(item)
@@ -146,6 +146,6 @@ class EffectShop:
             raise NotEnoughCookie(message)
 
         self._player.cookies[self.type_of_currency] -= price
-        self._player.effects.add(get_fn(item))
+        self._player.effects.add(item.function)
 
         return price
