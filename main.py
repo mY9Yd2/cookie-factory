@@ -101,7 +101,7 @@ def factory_shop_menu(player: Player) -> None:
         with timer_lock:
             for item in Factory:
                 quantity = player.factories.get(item, 0)
-                price = player.get_next_factory_price(
+                price = Player.get_next_factory_price(
                     player.factories[item], item.base_price
                 )
                 print(f"\t{item} : {price} ({quantity})")

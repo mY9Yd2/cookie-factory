@@ -53,7 +53,8 @@ class Player:
         self.factories: Counter[Factory] = Counter()
         self.effects: set[EffectFn] = set()
 
-    def get_next_factory_price(self, initial_quantity: int, base_price: int) -> int:
+    @staticmethod
+    def get_next_factory_price(initial_quantity: int, base_price: int) -> int:
         try:
             return round(base_price * (1.15**initial_quantity))
         except OverflowError as error:
@@ -66,7 +67,7 @@ class Player:
         total_price = 0
         for q in range(quantity):
             initial_quantity = self.factories[item] + q
-            total_price += self.get_next_factory_price(
+            total_price += Player.get_next_factory_price(
                 initial_quantity, item.base_price
             )
 
@@ -91,7 +92,7 @@ class Player:
         total_price = 0
         for q in range(quantity):
             initial_quantity = self.factories[item] - quantity + q
-            total_price += self.get_next_factory_price(
+            total_price += Player.get_next_factory_price(
                 initial_quantity, item.base_price
             )
 
