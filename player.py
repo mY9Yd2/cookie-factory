@@ -75,11 +75,11 @@ class Player:
         except OverflowError as error:
             raise TooMuchCookie("Too much!") from error
 
-    def buy_factory(self, item: Factory, quantity: int) -> int:
+    def buy_factory(self, factory: Factory, quantity: int) -> int:
         """Add the factory to the player's factories and subtract its price from the player's cookies
 
         Args:
-            item: The factory the player wants to buy
+            factory: The factory the player wants to buy
             quantity: The amount of factory the player wants to buy
 
         Returns:
@@ -95,27 +95,27 @@ class Player:
 
         total_price = 0
         for q in range(quantity):
-            initial_quantity = self.factories[item] + q
+            initial_quantity = self.factories[factory] + q
             total_price += Player.get_next_factory_price(
-                initial_quantity, item.base_price
+                initial_quantity, factory.base_price
             )
 
-        if total_price > self.cookies[item.type_of_currency]:
-            message = f"You don't have enough {item.type_of_currency}!"
-            message += f"\nIt costs {total_price} {item.type_of_currency}"
+        if total_price > self.cookies[factory.type_of_currency]:
+            message = f"You don't have enough {factory.type_of_currency}!"
+            message += f"\nIt costs {total_price} {factory.type_of_currency}"
 
             raise NotEnoughCookie(message)
 
-        self.cookies[item.type_of_currency] -= total_price
-        self.factories[item] += quantity
+        self.cookies[factory.type_of_currency] -= total_price
+        self.factories[factory] += quantity
 
         return total_price
 
-    def sell_factory(self, item: Factory, quantity: int) -> int:
+    def sell_factory(self, factory: Factory, quantity: int) -> int:
         """Remove the factory from the player's factories and add its price to the player's cookies
 
         Args:
-            item: The factory the player wishes to sell
+            factory: The factory the player wishes to sell
             quantity: The amount of factory the player wishes to sell
 
         Returns:
@@ -129,26 +129,26 @@ class Player:
         if quantity < 1:
             raise NotPositiveNumber("The quantity must be a positive number!")
 
-        if self.factories[item] - quantity < 0:
+        if self.factories[factory] - quantity < 0:
             raise NotEnoughFactory("You can't sell more than you have!")
 
         total_price = 0
         for q in range(quantity):
-            initial_quantity = self.factories[item] - quantity + q
+            initial_quantity = self.factories[factory] - quantity + q
             total_price += Player.get_next_factory_price(
-                initial_quantity, item.base_price
+                initial_quantity, factory.base_price
             )
 
-        self.cookies[item.type_of_currency] += total_price
-        self.factories[item] -= quantity
+        self.cookies[factory.type_of_currency] += total_price
+        self.factories[factory] -= quantity
 
         return total_price
 
-    def buy_effect(self, item: PurchasableEffect) -> int:
+    def buy_effect(self, effect: PurchasableEffect) -> int:
         """Add the effect to the player's effects and subtract its price from the player's cookies
 
         Args:
-            item: The effect the player wants to buy
+            effect: The effect the player wants to buy
 
         Returns:
             The total price paid by the player
@@ -158,18 +158,18 @@ class Player:
             NotEnoughCookie: An error occurred when the player didn't have enough cookies to buy the effect
         """
 
-        if item.function in self.effects:
+        if effect.function in self.effects:
             raise EffectAlreadyExist("You already bought this!")
 
-        price = item.base_price
+        price = effect.base_price
 
-        if price > self.cookies[item.type_of_currency]:
-            message = f"You don't have enough {item.type_of_currency}!"
-            message += f"\nIt costs {price} {item.type_of_currency}"
+        if price > self.cookies[effect.type_of_currency]:
+            message = f"You don't have enough {effect.type_of_currency}!"
+            message += f"\nIt costs {price} {effect.type_of_currency}"
 
             raise NotEnoughCookie(message)
 
-        self.cookies[item.type_of_currency] -= price
-        self.effects.add(item.function)
+        self.cookies[effect.type_of_currency] -= price
+        self.effects.add(effect.function)
 
         return price
