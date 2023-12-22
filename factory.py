@@ -28,6 +28,8 @@ from cookie import Cookie
 
 @unique
 class Factory(StrEnum):
+    """The factories that the player can buy"""
+
     TAKODACHI = auto()
     ROBOT = auto()
     FARM = auto()
@@ -35,6 +37,8 @@ class Factory(StrEnum):
 
     @property
     def production_volume(self) -> dict[Cookie, int]:
+        """Returns the corresponding factory production volume"""
+
         return {
             Factory.TAKODACHI: {Cookie.COOKIE: 1},
             Factory.ROBOT: {Cookie.COOKIE: 8},
@@ -44,6 +48,8 @@ class Factory(StrEnum):
 
     @property
     def base_price(self) -> int:
+        """Returns the price of the factory"""
+
         return {
             Factory.TAKODACHI: 5,
             Factory.ROBOT: 67,
@@ -53,6 +59,8 @@ class Factory(StrEnum):
 
     @property
     def type_of_currency(self) -> Cookie:
+        """Returns the type of currency"""
+
         return Cookie.COOKIE
 
     def __str__(self) -> str:
@@ -61,5 +69,7 @@ class Factory(StrEnum):
 
 @dataclass
 class FactoryInfo:
+    """Contains the necessary information about the factory in a changeable form"""
+
     type: Factory
     production_volume: dict[Cookie, int]
