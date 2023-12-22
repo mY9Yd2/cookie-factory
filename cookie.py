@@ -25,6 +25,8 @@ from enum import StrEnum, unique, auto
 
 @unique
 class Cookie(StrEnum):
+    """The basic types of cookies, also known as in-game currency"""
+
     COOKIE = auto()
     DARK_CHOCOLATE_COOKIE = auto()
 

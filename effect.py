@@ -35,6 +35,8 @@ EffectFn = Callable[[FactoryInfo], FactoryInfo]
 
 
 def effect_composition(*func: EffectFn) -> EffectFn:
+    """Combine the effect functions into one"""
+
     def compose(f: EffectFn, g: EffectFn) -> EffectFn:
         return lambda x: f(g(x))
 
@@ -42,6 +44,8 @@ def effect_composition(*func: EffectFn) -> EffectFn:
 
 
 def inanis(factory: FactoryInfo) -> FactoryInfo:
+    """Make the Takodachi factory to produce twice as many cookies"""
+
     _factory = copy.deepcopy(factory)
     if _factory.type is Factory.TAKODACHI:
         _factory.production_volume[Cookie.COOKIE] *= 2
@@ -49,6 +53,8 @@ def inanis(factory: FactoryInfo) -> FactoryInfo:
 
 
 def darkness(factory: FactoryInfo) -> FactoryInfo:
+    """Doubles the amount of Dark chocolate cookie produced by the factory"""
+
     _factory = copy.deepcopy(factory)
     if Cookie.DARK_CHOCOLATE_COOKIE in _factory.production_volume:
         _factory.production_volume[Cookie.DARK_CHOCOLATE_COOKIE] *= 2
@@ -56,6 +62,8 @@ def darkness(factory: FactoryInfo) -> FactoryInfo:
 
 
 def luck(factory: FactoryInfo) -> FactoryInfo:
+    """Chance to add five of every cookie the factory produces"""
+
     _factory = copy.deepcopy(factory)
     if random.choices((True, False), weights=[1, 50], k=1)[0]:
         for cookie in _factory.production_volume.keys():
@@ -65,22 +73,30 @@ def luck(factory: FactoryInfo) -> FactoryInfo:
 
 @unique
 class PurchasableEffect(StrEnum):
+    """Effects that the player can buy"""
+
     LUCK = auto()
 
     @property
     def function(self) -> EffectFn:
+        """Returns the corresponding effect function"""
+
         return {
             PurchasableEffect.LUCK: luck,
         }[self]
 
     @property
     def base_price(self) -> int:
+        """Returns the price of the effect"""
+
         return {
             PurchasableEffect.LUCK: 50,
         }[self]
 
     @property
     def type_of_currency(self) -> Cookie:
+        """Returns the type of currency"""
+
         return Cookie.DARK_CHOCOLATE_COOKIE
 
     def __str__(self) -> str:
@@ -89,11 +105,15 @@ class PurchasableEffect(StrEnum):
 
 @unique
 class ObtainableEffect(StrEnum):
+    """Effects that the player can obtain from various game mechanics"""
+
     INANIS = auto()
     DARKNESS = auto()
 
     @property
     def function(self) -> EffectFn:
+        """Returns the corresponding effect function"""
+
         return {
             ObtainableEffect.INANIS: inanis,
             ObtainableEffect.DARKNESS: darkness,

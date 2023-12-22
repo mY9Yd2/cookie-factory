@@ -183,6 +183,8 @@ def luck_menu(player: Player) -> None:
 
 
 def timer(player: Player) -> None:
+    """A new thread dealing with the player's factories, which produce cookies every second"""
+
     with timer_lock:
         produce_cookies = effect_composition(*player.effects)
         for factory, quantity in player.factories.items():

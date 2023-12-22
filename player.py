@@ -48,6 +48,8 @@ class EffectAlreadyExist(Exception):
 
 
 class Player:
+    """Contains cookies, factories and effects that the player has"""
+
     def __init__(self) -> None:
         self.cookies: Counter[Cookie] = Counter()
         self.factories: Counter[Factory] = Counter()
@@ -55,12 +57,39 @@ class Player:
 
     @staticmethod
     def get_next_factory_price(initial_quantity: int, base_price: int) -> int:
+        """Calculate the next factory price deepending on the initial quantity of factory that the player has
+
+        Args:
+            initial_quantity: The number of factories the player currently owns
+            base_price: The base price of the factory
+
+        Returns:
+            The price of the next factory
+
+        Raises:
+            TooMuchCookie: An error occurred during the calculation, when the number is so large that the program cannot able to handle
+        """
+
         try:
             return round(base_price * (1.15**initial_quantity))
         except OverflowError as error:
             raise TooMuchCookie("Too much!") from error
 
     def buy_factory(self, item: Factory, quantity: int) -> int:
+        """Add the factory to the player's factories and subtract its price from the player's cookies
+
+        Args:
+            item: The factory the player wants to buy
+            quantity: The amount of factory the player wants to buy
+
+        Returns:
+            The total price paid by the player
+
+        Raises:
+            NotPositiveNumber: An error occurred if the quantity is less than one
+            NotEnoughCookie: An error occurred when the player didn't have enough cookies to buy the factories
+        """
+
         if quantity < 1:
             raise NotPositiveNumber("The quantity must be a positive number!")
 
@@ -83,6 +112,20 @@ class Player:
         return total_price
 
     def sell_factory(self, item: Factory, quantity: int) -> int:
+        """Remove the factory from the player's factories and add its price to the player's cookies
+
+        Args:
+            item: The factory the player wishes to sell
+            quantity: The amount of factory the player wishes to sell
+
+        Returns:
+            The total price that the player has received for the factory
+
+        Raises:
+            NotPositiveNumber: An error occurred if the quantity is less than one
+            NotEnoughFactory: An error occurred when the player didn't have enough factories that the player want to sell
+        """
+
         if quantity < 1:
             raise NotPositiveNumber("The quantity must be a positive number!")
 
@@ -102,6 +145,19 @@ class Player:
         return total_price
 
     def buy_effect(self, item: PurchasableEffect) -> int:
+        """Add the effect to the player's effects and subtract its price from the player's cookies
+
+        Args:
+            item: The effect the player wants to buy
+
+        Returns:
+            The total price paid by the player
+
+        Raises:
+            EffectAlreadyExist: An error occurred if the effect is already exists in the player's effects
+            NotEnoughCookie: An error occurred when the player didn't have enough cookies to buy the effect
+        """
+
         if item.function in self.effects:
             raise EffectAlreadyExist("You already bought this!")
 
